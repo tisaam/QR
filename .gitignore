@@ -1,23 +1,2875 @@
-/.phpunit.cache
-/node_modules
-/public/build
-/public/hot
-/public/storage
-/storage/*.key
-/storage/pail
-/vendor
-.env
-.env.backup
-.env.production
-.phpactor.json
-.phpunit.result.cache
-Homestead.json
-Homestead.yaml
-npm-debug.log
-yarn-error.log
-/auth.json
-/.fleet
-/.idea
-/.nova
-/.vscode
-/.zed
+composer create-project laravel/laravel review-system
+cd review-system
+php artisan install:api
+# Authentication
+composer require laravel/breeze --dev
+php artisan breeze:install api
+
+# QR Code Generation
+composer require simplesoftwareio/simple-qrcode
+
+# PDF Generation
+composer require barryvdh/laravel-dompdf
+
+# Image/Storage
+composer require intervention/image
+
+# Payment Gateway (Razorpay for India)
+composer require razorpay/razorpay
+
+# WhatsApp API
+composer require http-message/http-message
+
+# Excel Export
+composer require maatwebsite/excel
+
+# UUID
+composer require symfony/uid
+// database/migrations/xxxx_create_users_table.php
+Schema::create('users', function (Blueprint $table) {
+    $table->id();
+    $table->string('name');
+    $table->string('email')->unique();
+    $table->string('phone')->nullable();
+    $table->timestamp('email_verified_at')->nullable();
+    $table->string('password');
+    $table->string('google_id')->nullable();
+    $table->string('avatar')->nullable();
+    $table->enum('role', ['super_admin', 'business_owner', 'employee'])->default('business_owner');
+    $table->enum('status', ['active', 'inactive', 'suspended'])->default('active');
+    $table->rememberToken();
+    $table->timestamps();
+    $table->softDeletes();
+});
+
+// Business Table
+Schema::create('businesses', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+    $table->string('name');
+    $table->string('slug')->unique();
+    $table->text('description')->nullable();
+    $table->string('address');
+    $table->string('city');
+    $table->string('state');
+    $table->string('pincode');
+    $table->string('phone');
+    $table->string('email');
+    $table->string('website')->nullable();
+    $table->string('google_place_id')->nullable();
+    $table->string('google_review_link')->nullable();
+    $table->string('logo')->nullable();
+    $table->string('cover_image')->nullable();
+    $table->enum('business_type', ['restaurant', 'hotel', 'retail', 'salon', 'hospital', 'other'])->default('other');
+    $table->enum('status', ['active', 'inactive', 'pending', 'rejected'])->default('pending');
+    $table->timestamps();
+    $table->softDeletes();
+});
+
+// Branches Table (for Multi-Branch)
+Schema::create('branches', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('business_id')->constrained()->cascadeOnDelete();
+    $table->string('name');
+    $table->string('address');
+    $table->string('city');
+    $table->string('state');
+    $table->string('phone');
+    $table->string('google_place_id')->nullable();
+    $table->string('google_review_link')->nullable();
+    $table->boolean('is_main')->default(false);
+    $table->enum('status', ['active', 'inactive'])->default('active');
+    $table->timestamps();
+});
+
+// QR Codes Table
+Schema::create('qr_codes', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('business_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('branch_id')->nullable()->constrained()->nullOnDelete();
+    $table->foreignId('employee_id')->nullable()->constrained('users')->nullOnDelete();
+    $table->string('name'); // e.g., "Table 5", "Room 101", "Reception"
+    $table->string('slug')->unique();
+    $table->enum('type', ['table', 'room', 'employee', 'counter', 'custom'])->default('custom');
+    $table->string('identifier')->nullable(); // table number, room number
+    $table->string('qr_image_path')->nullable();
+    $table->string('qr_svg_path')->nullable();
+    $table->string('landing_page_url');
+    $table->unsignedInteger('scan_count')->default(0);
+    $table->unsignedInteger('review_count')->default(0);
+    $table->boolean('is_active')->default(true);
+    $table->json('settings')->nullable(); // custom branding, colors
+    $table->timestamps();
+    $table->softDeletes();
+});
+
+// QR Scans Table
+Schema::create('qr_scans', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('qr_code_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('business_id')->constrained()->cascadeOnDelete();
+    $table->string('session_id')->nullable();
+    $table->string('ip_address')->nullable();
+    $table->string('device_type')->nullable(); // mobile, desktop, tablet
+    $table->string('browser')->nullable();
+    $table->string('os')->nullable();
+    $table->string('location')->nullable();
+    $table->string('latitude')->nullable();
+    $table->string('longitude')->nullable();
+    $table->boolean('converted_to_review')->default(false);
+    $table->timestamp('scanned_at');
+    $table->timestamps();
+});
+
+// Reviews Table
+Schema::create('reviews', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('business_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('branch_id')->nullable()->constrained()->nullOnDelete();
+    $table->foreignId('qr_code_id')->nullable()->constrained()->nullOnDelete();
+    $table->foreignId('scan_id')->nullable()->constrained('qr_scans')->nullOnDelete();
+    $table->foreignId('employee_id')->nullable()->constrained('users')->nullOnDelete();
+    $table->unsignedTinyInteger('rating'); // 1-5
+    $table->text('review_text')->nullable();
+    $table->text('ai_suggested_review')->nullable();
+    $table->enum('source', ['qr_scan', 'whatsapp', 'sms', 'email', 'nfc', 'direct'])->default('qr_scan');
+    $table->enum('status', ['pending', 'published', 'failed', 'skipped'])->default('pending');
+    $table->string('google_review_id')->nullable();
+    $table->string('customer_name')->nullable();
+    $table->string('customer_phone')->nullable();
+    $table->string('customer_email')->nullable();
+    $table->boolean('is_returning_customer')->default(false);
+    $table->json('metadata')->nullable();
+    $table->timestamps();
+});
+
+// AI Review Templates Table
+Schema::create('ai_review_templates', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('business_id')->constrained()->cascadeOnDelete();
+    $table->string('name');
+    $table->text('prompt_template');
+    $table->enum('language', ['en', 'hi', 'gu'])->default('en');
+    $table->unsignedTinyInteger('min_rating')->default(4);
+    $table->unsignedTinyInteger('max_rating')->default(5);
+    $table->boolean('is_active')->default(true);
+    $table->boolean('is_default')->default(false);
+    $table->integer('usage_count')->default(0);
+    $table->timestamps();
+});
+
+// Subscriptions/Plans Table
+Schema::create('plans', function (Blueprint $table) {
+    $table->id();
+    $table->string('name'); // Free, Basic, Premium, Enterprise
+    $table->string('slug')->unique();
+    $table->text('description')->nullable();
+    $table->decimal('price', 10, 2)->default(0);
+    $table->decimal('annual_price', 10, 2)->nullable();
+    $table->unsignedInteger('trial_days')->default(0);
+    $table->json('features')->nullable();
+    $table->json('limits')->nullable(); // qr_limit, review_limit, etc.
+    $table->enum('billing_cycle', ['monthly', 'yearly', 'one_time'])->default('monthly');
+    $table->boolean('is_active')->default(true);
+    $table->integer('sort_order')->default(0);
+    $table->timestamps();
+});
+
+// Plan Limits Structure (JSON)
+// {
+//     "qr_codes": 1,           // -1 for unlimited
+//     "reviews_per_month": 20, // -1 for unlimited
+//     "branches": 1,
+//     "employees": 0,
+//     "ai_credits": 0,
+//     "analytics_days": 7,
+//     "whatsapp": false,
+//     "sms": false,
+//     "nfc": false,
+//     "white_label": false,
+//     "custom_branding": false,
+//     "remove_branding": false
+// }
+
+// User Subscriptions Table
+Schema::create('subscriptions', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('plan_id')->constrained();
+    $table->foreignId('business_id')->nullable()->constrained()->nullOnDelete();
+    $table->string('razorpay_subscription_id')->nullable();
+    $table->string('razorpay_payment_id')->nullable();
+    $table->enum('status', ['active', 'expired', 'cancelled', 'past_due', 'trialing'])->default('active');
+    $table->timestamp('starts_at');
+    $table->timestamp('ends_at')->nullable();
+    $table->timestamp('trial_ends_at')->nullable();
+    $table->timestamp('cancelled_at')->nullable();
+    $table->json('features')->nullable();
+    $table->json('limits_used')->nullable();
+    $table->timestamps();
+});
+
+// Payments Table
+Schema::create('payments', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('subscription_id')->nullable()->constrained()->nullOnDelete();
+    $table->string('razorpay_payment_id');
+    $table->string('razorpay_order_id');
+    $table->string('razorpay_signature')->nullable();
+    $table->decimal('amount', 10, 2);
+    $table->string('currency', 3)->default('INR');
+    $table->enum('status', ['pending', 'completed', 'failed', 'refunded'])->default('pending');
+    $table->string('receipt')->nullable();
+    $table->json('metadata')->nullable();
+    $table->timestamps();
+});
+
+// Coupons Table
+Schema::create('coupons', function (Blueprint $table) {
+    $table->id();
+    $table->string('code')->unique();
+    $table->string('name');
+    $table->enum('discount_type', ['percentage', 'fixed'])->default('percentage');
+    $table->decimal('discount_value', 10, 2);
+    $table->decimal('max_discount', 10, 2)->nullable();
+    $table->decimal('min_order_amount', 10, 2)->default(0);
+    $table->unsignedInteger('usage_limit')->nullable();
+    $table->unsignedInteger('used_count')->default(0);
+    $table->foreignId('plan_id')->nullable()->constrained()->nullOnDelete();
+    $table->timestamp('valid_from');
+    $table->timestamp('valid_until');
+    $table->boolean('is_active')->default(true);
+    $table->timestamps();
+});
+
+// Coupon Usages Table
+Schema::create('coupon_usages', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('coupon_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('payment_id')->nullable()->constrained()->nullOnDelete();
+    $table->timestamp('used_at');
+    $table->timestamps();
+});
+
+// AI Credits Table
+Schema::create('ai_credits', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('business_id')->nullable()->constrained()->nullOnDelete();
+    $table->integer('total_credits')->default(0);
+    $table->integer('used_credits')->default(0);
+    $table->integer('remaining_credits')->default(0);
+    $table->timestamp('reset_at')->nullable();
+    $table->timestamps();
+});
+
+// AI Credit Logs Table
+Schema::create('ai_credit_logs', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('ai_credit_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+    $table->enum('type', ['credit', 'debit'])->default('debit');
+    $table->integer('amount');
+    $table->string('reason');
+    $table->foreignId('review_id')->nullable()->constrained()->nullOnDelete();
+    $table->timestamps();
+});
+
+// WhatsApp Messages Table
+Schema::create('whatsapp_messages', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('business_id')->constrained()->cascadeOnDelete();
+    $table->string('customer_phone');
+    $table->string('customer_name')->nullable();
+    $table->string('message_type'); // review_request, reminder, thank_you
+    $table->text('message_content');
+    $table->string('template_id')->nullable();
+    $table->enum('status', ['pending', 'sent', 'delivered', 'read', 'failed'])->default('pending');
+    $table->string('whatsapp_message_id')->nullable();
+    $table->json('response')->nullable();
+    $table->timestamp('sent_at')->nullable();
+    $table->timestamps();
+});
+
+// SMS Messages Table
+Schema::create('sms_messages', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('business_id')->constrained()->cascadeOnDelete();
+    $table->string('customer_phone');
+    $table->string('customer_name')->nullable();
+    $table->text('message_content');
+    $table->enum('status', ['pending', 'sent', 'delivered', 'failed'])->default('pending');
+    $table->string('provider_message_id')->nullable();
+    $table->decimal('cost', 8, 4)->default(0);
+    $table->timestamp('sent_at')->nullable();
+    $table->timestamps();
+});
+
+// Email Campaigns Table
+Schema::create('email_campaigns', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('business_id')->constrained()->cascadeOnDelete();
+    $table->string('name');
+    $table->string('subject');
+    $table->text('content');
+    $table->enum('type', ['review_request', 'thank_you', 'reminder', 'promotional'])->default('review_request');
+    $table->unsignedInteger('total_sent')->default(0);
+    $table->unsignedInteger('total_opened')->default(0);
+    $table->unsignedInteger('total_clicked')->default(0);
+    $table->enum('status', ['draft', 'scheduled', 'sending', 'completed', 'cancelled'])->default('draft');
+    $table->timestamp('scheduled_at')->nullable();
+    $table->timestamp('sent_at')->nullable();
+    $table->timestamps();
+});
+
+// Email Campaign Recipients Table
+Schema::create('email_campaign_recipients', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('campaign_id')->constrained()->cascadeOnDelete();
+    $table->string('email');
+    $table->string('name')->nullable();
+    $table->enum('status', ['pending', 'sent', 'opened', 'clicked', 'failed', 'bounced'])->default('pending');
+    $table->timestamp('sent_at')->nullable();
+    $table->timestamp('opened_at')->nullable();
+    $table->timestamp('clicked_at')->nullable();
+    $table->timestamps();
+});
+
+// NFC Cards Table
+Schema::create('nfc_cards', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('business_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('qr_code_id')->nullable()->constrained()->nullOnDelete();
+    $table->string('card_uid')->unique();
+    $table->string('name');
+    $table->string('design')->nullable();
+    $table->enum('status', ['active', 'inactive', 'lost'])->default('active');
+    $table->unsignedInteger('tap_count')->default(0);
+    $table->timestamps();
+});
+
+// Support Tickets Table
+Schema::create('support_tickets', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+    $table->string('subject');
+    $table->text('description');
+    $table->enum('priority', ['low', 'medium', 'high', 'urgent'])->default('medium');
+    $table->enum('status', ['open', 'in_progress', 'waiting', 'resolved', 'closed'])->default('open');
+    $table->foreignId('assigned_to')->nullable()->constrained('users')->nullOnDelete();
+    $table->timestamp('resolved_at')->nullable();
+    $table->timestamps();
+});
+
+// Ticket Messages Table
+Schema::create('ticket_messages', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('ticket_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+    $table->text('message');
+    $table->json('attachments')->nullable();
+    $table->boolean('is_admin')->default(false);
+    $table->timestamps();
+});
+
+// Notifications Table
+Schema::create('notifications', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+    $table->string('type');
+    $table->string('title');
+    $table->text('message');
+    $table->json('data')->nullable();
+    $table->boolean('is_read')->default(false);
+    $table->timestamp('read_at')->nullable();
+    $table->timestamps();
+});
+
+// Activity Logs Table
+Schema::create('activity_logs', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+    $table->string('model_type')->nullable();
+    $table->unsignedBigInteger('model_id')->nullable();
+    $table->string('action'); // create, update, delete, login, etc.
+    $table->string('description');
+    $table->json('properties')->nullable();
+    $table->string('ip_address')->nullable();
+    $table->string('user_agent')->nullable();
+    $table->timestamps();
+});
+
+// Settings Table
+Schema::create('settings', function (Blueprint $table) {
+    $table->id();
+    $table->string('group')->default('general');
+    $table->string('key')->unique();
+    $table->text('value')->nullable();
+    $table->string('type')->default('string'); // string, integer, boolean, json, image
+    $table->timestamps();
+});
+
+// Loyalty/Repeat Customers Table
+Schema::create('customers', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('business_id')->constrained()->cascadeOnDelete();
+    $table->string('phone')->nullable();
+    $table->string('email')->nullable();
+    $table->string('name')->nullable();
+    $table->unsignedInteger('visit_count')->default(1);
+    $table->unsignedInteger('review_count')->default(0);
+    $table->decimal('total_spent', 12, 2)->default(0);
+    $table->unsignedInteger('loyalty_points')->default(0);
+    $table->timestamp('first_visit')->nullable();
+    $table->timestamp('last_visit')->nullable();
+    $table->json('metadata')->nullable();
+    $table->timestamps();
+});
+
+// Employee Performance Table
+Schema::create('employee_performances', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('employee_id')->constrained('users')->cascadeOnDelete();
+    $table->foreignId('business_id')->constrained()->cascadeOnDelete();
+    $table->date('date');
+    $table->unsignedInteger('qr_scans')->default(0);
+    $table->unsignedInteger('reviews_generated')->default(0);
+    $table->decimal('avg_rating', 3, 2)->default(0);
+    $table->unsignedInteger('positive_reviews')->default(0);
+    $table->unsignedInteger('negative_reviews')->default(0);
+    $table->timestamps();
+});
+
+// Review Reminders Table
+Schema::create('review_reminders', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('business_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('scan_id')->nullable()->constrained('qr_scans')->nullOnDelete();
+    $table->string('customer_phone')->nullable();
+    $table->string('customer_email')->nullable();
+    $table->enum('channel', ['whatsapp', 'sms', 'email'])->default('whatsapp');
+    $table->enum('status', ['pending', 'sent', 'converted', 'failed'])->default('pending');
+    $table->timestamp('scheduled_at');
+    $table->timestamp('sent_at')->nullable();
+    $table->timestamps();
+});
+review-system/
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── Auth/
+│   │   │   │   ├── LoginController.php
+│   │   │   │   ├── RegisterController.php
+│   │   │   │   └── GoogleLoginController.php
+│   │   │   ├── Business/
+│   │   │   │   ├── BusinessProfileController.php
+│   │   │   │   ├── BranchController.php
+│   │   │   │   └── BusinessDashboardController.php
+│   │   │   ├── QR/
+│   │   │   │   ├── QRCodeController.php
+│   │   │   │   └── QRScanController.php
+│   │   │   ├── Review/
+│   │   │   │   ├── ReviewController.php
+│   │   │   │   └── AIReviewController.php
+│   │   │   ├── Analytics/
+│   │   │   │   └── AnalyticsController.php
+│   │   │   ├── Subscription/
+│   │   │   │   ├── PlanController.php
+│   │   │   │   ├── SubscriptionController.php
+│   │   │   │   └── PaymentController.php
+│   │   │   ├── Campaign/
+│   │   │   │   ├── WhatsAppController.php
+│   │   │   │   ├── SMSController.php
+│   │   │   │   └── EmailCampaignController.php
+│   │   │   ├── NFC/
+│   │   │   │   └── NFCCardController.php
+│   │   │   ├── Support/
+│   │   │   │   └── TicketController.php
+│   │   │   ├── Customer/
+│   │   │   │   └── CustomerController.php
+│   │   │   ├── Employee/
+│   │   │   │   └── EmployeeController.php
+│   │   │   ├── Admin/
+│   │   │   │   ├── AdminDashboardController.php
+│   │   │   │   ├── AdminBusinessController.php
+│   │   │   │   ├── AdminSubscriptionController.php
+│   │   │   │   ├── AdminPaymentController.php
+│   │   │   │   ├── AdminCouponController.php
+│   │   │   │   ├── AdminUserController.php
+│   │   │   │   ├── AdminAICreditController.php
+│   │   │   │   ├── AdminReportController.php
+│   │   │   │   └── AdminTicketController.php
+│   │   │   └── Landing/
+│   │   │       └── LandingPageController.php
+│   │   ├── Middleware/
+│   │   │   ├── CheckSubscription.php
+│   │   │   ├── CheckAICredits.php
+│   │   │   ├── CheckQRLimit.php
+│   │   │   └── AdminMiddleware.php
+│   │   ├── Requests/
+│   │   │   ├── Auth/
+│   │   │   ├── Business/
+│   │   │   ├── QR/
+│   │   │   └── Review/
+│   │   └── Resources/
+│   │       ├── BusinessResource.php
+│   │       ├── QRCodeResource.php
+│   │       ├── ReviewResource.php
+│   │       └── AnalyticsResource.php
+│   ├── Models/
+│   │   ├── User.php
+│   │   ├── Business.php
+│   │   ├── Branch.php
+│   │   ├── QRCode.php
+│   │   ├── QRScan.php
+│   │   ├── Review.php
+│   │   ├── AIReviewTemplate.php
+│   │   ├── Plan.php
+│   │   ├── Subscription.php
+│   │   ├── Payment.php
+│   │   ├── Coupon.php
+│   │   ├── CouponUsage.php
+│   │   ├── AICredit.php
+│   │   ├── AICreditLog.php
+│   │   ├── WhatsAppMessage.php
+│   │   ├── SMSMessage.php
+│   │   ├── EmailCampaign.php
+│   │   ├── EmailCampaignRecipient.php
+│   │   ├── NFCCard.php
+│   │   ├── SupportTicket.php
+│   │   ├── TicketMessage.php
+│   │   ├── Notification.php
+│   │   ├── ActivityLog.php
+│   │   ├── Setting.php
+│   │   ├── Customer.php
+│   │   ├── EmployeePerformance.php
+│   │   └── ReviewReminder.php
+│   ├── Services/
+│   │   ├── QR/
+│   │   │   └── QRCodeService.php
+│   │   ├── AI/
+│   │   │   └── AIService.php
+│   │   ├── Google/
+│   │   │   └── GooglePlaceService.php
+│   │   ├── Payment/
+│   │   │   └── RazorpayService.php
+│   │   ├── WhatsApp/
+│   │   │   └── WhatsAppService.php
+│   │   ├── SMS/
+│   │   │   └── SMSService.php
+│   │   ├── Email/
+│   │   │   └── EmailCampaignService.php
+│   │   ├── Analytics/
+│   │   │   └── AnalyticsService.php
+│   │   ├── NFC/
+│   │   │   └── NFCService.php
+│   │   └── PDF/
+│   │       └── ReportPDFService.php
+│   ├── Traits/
+│   │   ├── HasSubscription.php
+│   │   └── HasAnalytics.php
+│   └── Enums/
+│       ├── BusinessType.php
+│       ├── QRType.php
+│       ├── ReviewSource.php
+│       ├── SubscriptionStatus.php
+│       └── PaymentStatus.php
+├── database/
+│   ├── seeders/
+│   │   ├── PlanSeeder.php
+│   │   ├── SettingSeeder.php
+│   │   ├── AdminUserSeeder.php
+│   │   └── AIReviewTemplateSeeder.php
+│   └── factories/
+├── resources/
+│   ├── views/
+│   │   ├── layouts/
+│   │   │   ├── app.blade.php
+│   │   │   ├── admin.blade.php
+│   │   │   └── landing.blade.php
+│   │   ├── auth/
+│   │   ├── business/
+│   │   │   ├── dashboard.blade.php
+│   │   │   ├── profile/
+│   │   │   ├── branches/
+│   │   │   └── settings/
+│   │   ├── qr/
+│   │   │   ├── index.blade.php
+│   │   │   ├── create.blade.php
+│   │   │   └── show.blade.php
+│   │   ├── review/
+│   │   │   ├── index.blade.php
+│   │   │   └── analytics.blade.php
+│   │   ├── subscription/
+│   │   │   ├── plans.blade.php
+│   │   │   └── billing.blade.php
+│   │   ├── campaign/
+│   │   │   ├── whatsapp/
+│   │   │   ├── sms/
+│   │   │   └── email/
+│   │   ├── nfc/
+│   │   ├── support/
+│   │   ├── employee/
+│   │   ├── admin/
+│   │   │   ├── dashboard.blade.php
+│   │   │   ├── businesses/
+│   │   │   ├── subscriptions/
+│   │   │   ├── payments/
+│   │   │   ├── coupons/
+│   │   │   ├── users/
+│   │   │   ├── ai-credits/
+│   │   │   ├── reports/
+│   │   │   └── tickets/
+│   │   └── landing/
+│   │       └── review-page.blade.php
+│   └── js/
+│       ├── app.js
+│       ├── landing.js
+│       └── charts.js
+├── routes/
+│   ├── web.php
+│   ├── api.php
+│   └── admin.php
+└── public/
+    ├── qr/           # Generated QR codes
+    ├── uploads/      # Logos, images
+    └── nfc/          # NFC card designs
+// routes/web.php
+
+// ==================== PUBLIC ROUTES ====================
+Route::get('/', [LandingPageController::class, 'home']);
+Route::get('/pricing', [PlanController::class, 'publicPlans']);
+Route::get('/features', [LandingPageController::class, 'features']);
+Route::get('/contact', [LandingPageController::class, 'contact']);
+
+// ==================== LANDING PAGE (QR Scan) ====================
+Route::get('/r/{slug}', [LandingPageController::class, 'reviewPage']);
+Route::post('/r/{slug}/scan', [QRScanController::class, 'recordScan']);
+Route::post('/r/{slug}/generate-review', [AIReviewController::class, 'generateReview']);
+Route::post('/r/{slug}/submit-review', [ReviewController::class, 'submitReview']);
+Route::get('/r/{slug}/redirect-google', [ReviewController::class, 'redirectToGoogle']);
+
+// ==================== AUTH ROUTES ====================
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [LoginController::class, 'login']);
+    Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
+    Route::post('/register', [RegisterController::class, 'register']);
+    Route::get('/auth/google', [GoogleLoginController::class, 'redirectToGoogle']);
+    Route::get('/auth/google/callback', [GoogleLoginController::class, 'handleGoogleCallback']);
+});
+
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+// ==================== AUTHENTICATED BUSINESS ROUTES ====================
+Route::middleware(['auth', 'verified'])->group(function () {
+    
+    // ---------- Onboarding ----------
+    Route::get('/onboarding', [BusinessProfileController::class, 'onboarding'])->name('onboarding');
+    Route::post('/onboarding', [BusinessProfileController::class, 'storeOnboarding']);
+    Route::get('/onboarding/complete', [BusinessProfileController::class, 'onboardingComplete']);
+    
+    // ---------- Dashboard ----------
+    Route::get('/dashboard', [BusinessDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/stats', [BusinessDashboardController::class, 'getStats'])->name('dashboard.stats');
+    Route::get('/dashboard/chart-data', [BusinessDashboardController::class, 'getChartData']);
+    
+    // ---------- Business Profile ----------
+    Route::resource('business', BusinessProfileController::class)->except(['show', 'destroy']);
+    Route::post('business/verify-google', [BusinessProfileController::class, 'verifyGooglePlace'])->name('business.verify-google');
+    Route::get('business/google-search', [BusinessProfileController::class, 'searchGooglePlaces']);
+    
+    // ---------- Branches ----------
+    Route::resource('branches', BranchController::class);
+    Route::post('branches/{branch}/set-main', [BranchController::class, 'setMain'])->name('branches.set-main');
+    
+    // ---------- QR Codes ----------
+    Route::resource('qr-codes', QRCodeController::class);
+    Route::post('qr-codes/bulk-generate', [QRCodeController::class, 'bulkGenerate'])->name('qr-codes.bulk-generate');
+    Route::get('qr-codes/{qr_code}/download/{format}', [QRCodeController::class, 'download'])->name('qr-codes.download');
+    Route::get('qr-codes/{qr_code}/print', [QRCodeController::class, 'printView'])->name('qr-codes.print');
+    Route::post('qr-codes/regenerate/{qr_code}', [QRCodeController::class, 'regenerate'])->name('qr-codes.regenerate');
+    
+    // ---------- Reviews ----------
+    Route::get('reviews', [ReviewController::class, 'index'])->name('reviews.index');
+    Route::get('reviews/export', [ReviewController::class, 'export'])->name('reviews.export');
+    Route::get('reviews/{review}', [ReviewController::class, 'show'])->name('reviews.show');
+    Route::get('reviews/report/pdf', [ReviewController::class, 'generatePDFReport'])->name('reviews.pdf-report');
+    
+    // ---------- AI Review Templates ----------
+    Route::resource('ai-templates', AIReviewTemplateController::class);
+    Route::post('ai-templates/{template}/set-default', [AIReviewTemplateController::class, 'setDefault']);
+    Route::post('ai-templates/test', [AIReviewTemplateController::class, 'testTemplate'])->name('ai-templates.test');
+    
+    // ---------- Analytics ----------
+    Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
+    Route::get('analytics/scans', [AnalyticsController::class, 'scanAnalytics'])->name('analytics.scans');
+    Route::get('analytics/reviews', [AnalyticsController::class, 'reviewAnalytics'])->name('analytics.reviews');
+    Route::get('analytics/conversion', [AnalyticsController::class, 'conversionAnalytics'])->name('analytics.conversion');
+    Route::get('analytics/branch-wise', [AnalyticsController::class, 'branchWiseAnalytics'])->name('analytics.branch-wise');
+    Route::get('analytics/employee-wise', [AnalyticsController::class, 'employeeWiseAnalytics'])->name('analytics.employee-wise');
+    Route::get('analytics/export', [AnalyticsController::class, 'export'])->name('analytics.export');
+    
+    // ---------- Customers ----------
+    Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
+    Route::get('customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
+    Route::get('customers/export', [CustomerController::class, 'export'])->name('customers.export');
+    Route::get('customers/loyalty', [CustomerController::class, 'loyaltyReport'])->name('customers.loyalty');
+    
+    // ---------- Employees ----------
+    Route::resource('employees', EmployeeController::class);
+    Route::get('employees/{employee}/performance', [EmployeeController::class, 'performance'])->name('employees.performance');
+    Route::post('employees/invite', [EmployeeController::class, 'invite'])->name('employees.invite');
+    
+    // ---------- Subscriptions & Payments ----------
+    Route::get('subscription/plans', [PlanController::class, 'index'])->name('plans.index');
+    Route::get('subscription/current', [SubscriptionController::class, 'current'])->name('subscription.current');
+    Route::post('subscription/subscribe', [SubscriptionController::class, 'subscribe'])->name('subscription.subscribe');
+    Route::post('subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
+    Route::post('subscription/change-plan', [SubscriptionController::class, 'changePlan'])->name('subscription.change-plan');
+    Route::get('subscription/invoices', [SubscriptionController::class, 'invoices'])->name('subscription.invoices');
+    
+    // Razorpay Webhook
+    Route::post('razorpay/webhook', [PaymentController::class, 'webhook'])->name('razorpay.webhook');
+    
+    // ---------- Coupons ----------
+    Route::post('coupon/validate', [CouponController::class, 'validate'])->name('coupon.validate');
+    Route::post('coupon/apply', [CouponController::class, 'apply'])->name('coupon.apply');
+    
+    // ---------- WhatsApp Campaign ----------
+    Route::get('campaign/whatsapp', [WhatsAppController::class, 'index'])->name('whatsapp.index');
+    Route::post('campaign/whatsapp/send', [WhatsAppController::class, 'send'])->name('whatsapp.send');
+    Route::post('campaign/whatsapp/bulk', [WhatsAppController::class, 'bulkSend'])->name('whatsapp.bulk');
+    Route::get('campaign/whatsapp/templates', [WhatsAppController::class, 'templates'])->name('whatsapp.templates');
+    Route::get('campaign/whatsapp/history', [WhatsAppController::class, 'history'])->name('whatsapp.history');
+    
+    // ---------- SMS Campaign ----------
+    Route::get('campaign/sms', [SMSController::class, 'index'])->name('sms.index');
+    Route::post('campaign/sms/send', [SMSController::class, 'send'])->name('sms.send');
+    Route::post('campaign/sms/bulk', [SMSController::class, 'bulkSend'])->name('sms.bulk');
+    Route::get('campaign/sms/history', [SMSController::class, 'history'])->name('sms.history');
+    
+    // ---------- Email Campaign ----------
+    Route::resource('campaign/email', EmailCampaignController::class);
+    Route::post('campaign/email/{campaign}/send', [EmailCampaignController::class, 'send'])->name('email-campaign.send');
+    Route::get('campaign/email/{campaign}/report', [EmailCampaignController::class, 'report'])->name('email-campaign.report');
+    
+    // ---------- NFC Cards ----------
+    Route::resource('nfc-cards', NFCCardController::class);
+    Route::get('nfc-cards/{card}/design', [NFCCardController::class, 'design'])->name('nfc-cards.design');
+    Route::post('nfc-cards/{card}/update-design', [NFCCardController::class, 'updateDesign']);
+    Route::get('nfc-cards/{card}/order', [NFCCardController::class, 'order'])->name('nfc-cards.order');
+    
+    // ---------- Review Reminders ----------
+    Route::get('reminders', [ReviewReminderController::class, 'index'])->name('reminders.index');
+    Route::post('reminders', [ReviewReminderController::class, 'store'])->name('reminders.store');
+    Route::post('reminders/bulk', [ReviewReminderController::class, 'bulkCreate'])->name('reminders.bulk');
+    
+    // ---------- Support Tickets ----------
+    Route::resource('tickets', TicketController::class);
+    Route::post('tickets/{ticket}/message', [TicketController::class, 'addMessage'])->name('tickets.message');
+    Route::post('tickets/{ticket}/close', [TicketController::class, 'close'])->name('tickets.close');
+    
+    // ---------- Notifications ----------
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+    
+    // ---------- Settings ----------
+    Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
+    Route::post('settings', [SettingController::class, 'update'])->name('settings.update');
+    Route::post('settings/logo', [SettingController::class, 'updateLogo'])->name('settings.logo');
+    
+    // ---------- AI Credits ----------
+    Route::get('ai-credits', [AICreditController::class, 'index'])->name('ai-credits.index');
+    Route::get('ai-credits/history', [AICreditController::class, 'history'])->name('ai-credits.history');
+    Route::post('ai-credits/purchase', [AICreditController::class, 'purchase'])->name('ai-credits.purchase');
+});
+
+// ==================== ADMIN ROUTES ====================
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
+    
+    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/stats', [AdminDashboardController::class, 'getStats']);
+    Route::get('/dashboard/revenue-chart', [AdminDashboardController::class, 'revenueChart']);
+    
+    // Businesses
+    Route::resource('businesses', AdminBusinessController::class);
+    Route::post('businesses/{business}/approve', [AdminBusinessController::class, 'approve'])->name('businesses.approve');
+    Route::post('businesses/{business}/reject', [AdminBusinessController::class, 'reject'])->name('businesses.reject');
+    Route::post('businesses/{business}/suspend', [AdminBusinessController::class, 'suspend'])->name('businesses.suspend');
+    
+    // Users
+    Route::resource('users', AdminUserController::class);
+    Route::post('users/{user}/toggle-status', [AdminUserController::class, 'toggleStatus'])->name('users.toggle-status');
+    
+    // Subscriptions
+    Route::get('subscriptions', [AdminSubscriptionController::class, 'index'])->name('subscriptions.index');
+    Route::get('subscriptions/{subscription}', [AdminSubscriptionController::class, 'show'])->name('subscriptions.show');
+    Route::post('subscriptions/{subscription}/cancel', [AdminSubscriptionController::class, 'cancel'])->name('subscriptions.cancel');
+    Route::post('subscriptions/{subscription}/extend', [AdminSubscriptionController::class, 'extend'])->name('subscriptions.extend');
+    
+    // Plans
+    Route::resource('plans', AdminPlanController::class);
+    
+    // Payments
+    Route::get('payments', [AdminPaymentController::class, 'index'])->name('payments.index');
+    Route::get('payments/{payment}', [AdminPaymentController::class, 'show'])->name('payments.show');
+    Route::get('payments/export', [AdminPaymentController::class, 'export'])->name('payments.export');
+    Route::post('payments/{payment}/refund', [AdminPaymentController::class, 'refund'])->name('payments.refund');
+    
+    // Coupons
+    Route::resource('coupons', AdminCouponController::class);
+    Route::get('coupons/{coupon}/usage', [AdminCouponController::class, 'usage'])->name('coupons.usage');
+    
+    // AI Credits Management
+    Route::get('ai-credits', [AdminAICreditController::class, 'index'])->name('ai-credits.index');
+    Route::post('ai-credits/grant', [AdminAICreditController::class, 'grant'])->name('ai-credits.grant');
+    Route::get('ai-credits/logs', [AdminAICreditController::class, 'logs'])->name('ai-credits.logs');
+    
+    // Reports
+    Route::get('reports', [AdminReportController::class, 'index'])->name('reports.index');
+    Route::get('reports/revenue', [AdminReportController::class, 'revenue'])->name('reports.revenue');
+    Route::get('reports/subscriptions', [AdminReportController::class, 'subscriptions'])->name('reports.subscriptions');
+    Route::get('reports/businesses', [AdminReportController::class, 'businesses'])->name('reports.businesses');
+    Route::get('reports/reviews', [AdminReportController::class, 'reviews'])->name('reports.reviews');
+    Route::get('reports/export/{type}', [AdminReportController::class, 'export'])->name('reports.export');
+    
+    // Support Tickets
+    Route::get('tickets', [AdminTicketController::class, 'index'])->name('tickets.index');
+    Route::get('tickets/{ticket}', [AdminTicketController::class, 'show'])->name('tickets.show');
+    Route::post('tickets/{ticket}/assign', [AdminTicketController::class, 'assign'])->name('tickets.assign');
+    Route::post('tickets/{ticket}/message', [AdminTicketController::class, 'addMessage'])->name('tickets.message');
+    Route::post('tickets/{ticket}/resolve', [AdminTicketController::class, 'resolve'])->name('tickets.resolve');
+    
+    // Settings
+    Route::get('settings', [AdminSettingController::class, 'index'])->name('settings.index');
+    Route::post('settings', [AdminSettingController::class, 'update'])->name('settings.update');
+    
+    // Activity Logs
+    Route::get('activity-logs', [AdminActivityLogController::class, 'index'])->name('activity-logs.index');
+    Route::get('activity-logs/{log}', [AdminActivityLogController::class, 'show'])->name('activity-logs.show');
+});
+PHASE 4: Core Services Implementation (Week 3-5)
+4.1 QR Code Service
+
+// app/Services/QR/QRCodeService.php
+
+namespace App\Services\QR;
+
+use App\Models\QRCode;
+use App\Models\Business;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
+
+class QRCodeService
+{
+    public function generate(Business $business, array $data): QRCode
+    {
+        $slug = $this->generateUniqueSlug($data['name']);
+        $landingUrl = url('/r/' . $slug);
+        
+        $qrCode = QRCode::create([
+            'business_id' => $business->id,
+            'branch_id' => $data['branch_id'] ?? null,
+            'employee_id' => $data['employee_id'] ?? null,
+            'name' => $data['name'],
+            'slug' => $slug,
+            'type' => $data['type'] ?? 'custom',
+            'identifier' => $data['identifier'] ?? null,
+            'landing_page_url' => $landingUrl,
+            'is_active' => true,
+        ]);
+        
+        // Generate QR Images
+        $this->generateQRImages($qrCode, $landingUrl, $data);
+        
+        return $qrCode->load('business', 'branch', 'employee');
+    }
+    
+    public function generateBulk(Business $business, array $data): array
+    {
+        $qrCodes = [];
+        $prefix = $data['prefix'] ?? 'QR';
+        $start = $data['start_number'] ?? 1;
+        $end = $data['end_number'] ?? 10;
+        
+        for ($i = $start; $i <= $end; $i++) {
+            $identifier = $prefix . ' ' . $i;
+            $qrCodes[] = $this->generate($business, [
+                'name' => $identifier,
+                'type' => $data['type'] ?? 'custom',
+                'identifier' => $identifier,
+                'branch_id' => $data['branch_id'] ?? null,
+            ]);
+        }
+        
+        return $qrCodes;
+    }
+    
+    public function generateQRImages(QRCode $qrCode, string $url, array $options = [])
+    {
+        $size = $options['size'] ?? 400;
+        $color = $options['color'] ?? '#000000';
+        $bgColor = $options['bg_color'] ?? '#ffffff';
+        $logoPath = $options['logo'] ?? null;
+        
+        // PNG Format
+        $qrImage = QrCode::format('png')
+            ->size($size)
+            ->color(0, 0, 0)
+            ->backgroundColor(255, 255, 255)
+            ->margin(2)
+            ->generate($url);
+        
+        $pngPath = 'qr/' . $qrCode->slug . '.png';
+        Storage::put('public/' . $pngPath, $qrImage);
+        $qrCode->update(['qr_image_path' => $pngPath]);
+        
+        // SVG Format
+        $qrSvg = QrCode::format('svg')
+            ->size($size)
+            ->margin(2)
+            ->generate($url);
+        
+        $svgPath = 'qr/' . $qrCode->slug . '.svg';
+        Storage::put('public/' . $svgPath, $qrSvg);
+        $qrCode->update(['qr_svg_path' => $svgPath]);
+        
+        // If logo provided, merge logo with QR
+        if ($logoPath && Storage::exists('public/' . $logoPath)) {
+            $this->mergeLogoWithQR($qrCode, $logoPath);
+        }
+    }
+    
+    public function download(QRCode $qrCode, string $format = 'png')
+    {
+        $path = $format === 'svg' 
+            ? $qrCode->qr_svg_path 
+            : $qrCode->qr_image_path;
+            
+        return Storage::disk('public')->download($path, $qrCode->slug . '.' . $format);
+    }
+    
+    public function generatePDF(QRCode $qrCode)
+    {
+        // Generate printable PDF with QR code
+        $pdf = app()->make('dompdf.wrapper');
+        $pdf->loadView('qr.print', compact('qrCode'));
+        return $pdf->download($qrCode->slug . '.pdf');
+    }
+    
+    private function generateUniqueSlug(string $name): string
+    {
+        $slug = Str::slug($name) . '-' . Str::random(6);
+        while (QRCode::where('slug', $slug)->exists()) {
+            $slug = Str::slug($name) . '-' . Str::random(6);
+        }
+        return $slug;
+    }
+    
+    private function mergeLogoWithQR(QRCode $qrCode, string $logoPath)
+    {
+        // Use Intervention Image to merge logo
+        $qrImage = \Image::make(Storage::path('public/' . $qrCode->qr_image_path));
+        $logo = \Image::make(Storage::path('public/' . $logoPath));
+        
+        $logo->resize(80, 80);
+        $qrImage->insert($logo, 'center');
+        $qrImage->save(Storage::path('public/' . $qrCode->qr_image_path));
+    }
+    
+    public function recordScan(QRCode $qrCode, array $scanData): QRScan
+    {
+        $scan = QRScan::create([
+            'qr_code_id' => $qrCode->id,
+            'business_id' => $qrCode->business_id,
+            'session_id' => $scanData['session_id'] ?? session()->getId(),
+            'ip_address' => $scanData['ip_address'] ?? request()->ip(),
+            'device_type' => $scanData['device_type'] ?? $this->detectDevice(),
+            'browser' => $scanData['browser'] ?? $this->detectBrowser(),
+            'os' => $scanData['os'] ?? $this->detectOS(),
+            'location' => $scanData['location'] ?? null,
+            'latitude' => $scanData['latitude'] ?? null,
+            'longitude' => $scanData['longitude'] ?? null,
+            'scanned_at' => now(),
+        ]);
+        
+        // Increment scan count
+        $qrCode->increment('scan_count');
+        
+        return $scan;
+    }
+    
+    private function detectDevice(): string
+    {
+        $userAgent = request()->userAgent();
+        if (preg_match('/Mobile/i', $userAgent)) return 'mobile';
+        if (preg_match('/Tablet/i', $userAgent)) return 'tablet';
+        return 'desktop';
+    }
+    
+    private function detectBrowser(): string
+    {
+        $userAgent = request()->userAgent();
+        if (preg_match('/Chrome/i', $userAgent)) return 'Chrome';
+        if (preg_match('/Firefox/i', $userAgent)) return 'Firefox';
+        if (preg_match('/Safari/i', $userAgent)) return 'Safari';
+        return 'Other';
+    }
+    
+    private function detectOS(): string
+    {
+        $userAgent = request()->userAgent();
+        if (preg_match('/Android/i', $userAgent)) return 'Android';
+        if (preg_match('/iPhone|iPad/i', $userAgent)) return 'iOS';
+        if (preg_match('/Windows/i', $userAgent)) return 'Windows';
+        if (preg_match('/Mac/i', $userAgent)) return 'macOS';
+        if (preg_match('/Linux/i', $userAgent)) return 'Linux';
+        return 'Other';
+    }
+}
+4.2 AI Review Service
+// app/Services/AI/AIService.php
+
+namespace App\Services\AI;
+
+use App\Models\AICredit;
+use App\Models\AICreditLog;
+use App\Models\Business;
+use App\Models\AIReviewTemplate;
+use App\Models\Review;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+class AIService
+{
+    private $apiKey;
+    private $apiUrl;
+    private $model;
+    
+    public function __construct()
+    {
+        $this->apiKey = config('services.openai.api_key') ?? config('services.gemini.api_key');
+        $this->apiUrl = config('services.openai.api_url', 'https://api.openai.com/v1/chat/completions');
+        $this->model = config('services.openai.model', 'gpt-3.5-turbo');
+    }
+    
+    public function generateReviewSuggestions(
+        Business $business,
+        int $rating,
+        string $language = 'en',
+        ?string $customPrompt = null
+    ): array
+    {
+        // Check AI Credits
+        if (!$this->hasCredits($business)) {
+            throw new \Exception('Insufficient AI credits');
+        }
+        
+        // Get template or use default
+        $template = $this->getTemplate($business, $rating, $language);
+        
+        // Build prompt
+        $prompt = $customPrompt ?? $this->buildPrompt($business, $template, $rating, $language);
+        
+        // Call AI API
+        $response = $this->callAI($prompt);
+        
+        // Parse response
+        $suggestions = $this->parseSuggestions($response);
+        
+        // Deduct credits
+        $this->deductCredits($business, 1, 'Review generation');
+        
+        return $suggestions;
+    }
+    
+    public function generateReplyToReview(Review $review): string
+    {
+        $business = $review->business;
+        
+        if (!$this->hasCredits($business)) {
+            throw new \Exception('Insufficient AI credits');
+        }
+        
+        $prompt = $this->buildReplyPrompt($review);
+        $response = $this->callAI($prompt);
+        
+        $this->deductCredits($business, 1, 'Auto-reply generation');
+        
+        return $response;
+    }
+    
+    private function buildPrompt(
+        Business $business,
+        AIReviewTemplate $template,
+        int $rating,
+        string $language
+    ): string
+    {
+        $languageNames = [
+            'en' => 'English',
+            'hi' => 'Hindi',
+            'gu' => 'Gujarati'
+        ];
+        
+        $languageName = $languageNames[$language] ?? 'English';
+        
+        return <<<PROMPT
+You are helping a customer write a Google review for a business.
+
+Business Details:
+- Name: {$business->name}
+- Type: {$business->business_type}
+- Location: {$business->city}, {$business->state}
+
+Customer's Rating: {$rating} stars
+
+Template: {$template->prompt_template}
+
+Instructions:
+1. Generate 3 different review options in {$languageName}
+2. Each review should be 20-50 words
+3. Reviews should sound natural and genuine
+4. Include specific details that would be relevant for this type of business
+5. Format your response as a JSON array with 3 objects, each having "text" field
+
+Example format:
+[
+    {"text": "Review text 1"},
+    {"text": "Review text 2"},
+    {"text": "Review text 3"}
+]
+
+Return ONLY the JSON array, no other text.
+PROMPT;
+    }
+    
+    private function buildReplyPrompt(Review $review): string
+    {
+        return <<<PROMPT
+You are a business owner responding to a Google review.
+
+Business: {$review->business->name}
+Review Rating: {$review->rating} stars
+Review Text: {$review->review_text}
+
+Instructions:
+1. Write a professional, thank you response
+2. Keep it concise (2-3 sentences)
+3. If rating is low, be empathetic and invite them to contact directly
+4. If rating is high, express gratitude
+5. Don't mention this is AI generated
+
+Return ONLY the response text, nothing else.
+PROMPT;
+    }
+    
+    private function callAI(string $prompt): string
+    {
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Content-Type' => 'application/json',
+            ])->post($this->apiUrl, [
+                'model' => $this->model,
+                'messages' => [
+                    ['role' => 'system', 'content' => 'You are a helpful assistant that generates Google reviews.'],
+                    ['role' => 'user', 'content' => $prompt],
+                ],
+                'temperature' => 0.7,
+                'max_tokens' => 500,
+            ]);
+            
+            if ($response->failed()) {
+                Log::error('AI API Error', ['response' => $response->body()]);
+                throw new \Exception('AI API request failed');
+            }
+            
+            return $response->json('choices.0.message.content');
+            
+        } catch (\Exception $e) {
+            Log::error('AI Service Error', ['error' => $e->getMessage()]);
+            
+            // Fallback to predefined templates
+            return $this->getFallbackReviews();
+        }
+    }
+    
+    private function parseSuggestions(string $response): array
+    {
+        // Try to parse JSON
+        $decoded = json_decode($response, true);
+        
+        if (is_array($decoded)) {
+            return array_map(fn($item) => $item['text'] ?? $item, $decoded);
+        }
+        
+        // If not JSON, split by newlines
+        $lines = array_filter(explode("\n", $response));
+        return array_slice($lines, 0, 3);
+    }
+    
+    private function getTemplate(Business $business, int $rating, string $language): AIReviewTemplate
+    {
+        // Try to find custom template
+        $template = AIReviewTemplate::where('business_id', $business->id)
+            ->where('language', $language)
+            ->where('min_rating', '<=', $rating)
+            ->where('max_rating', '>=', $rating)
+            ->where('is_active', true)
+            ->first();
+        
+        if ($template) return $template;
+        
+        // Return default template
+        return AIReviewTemplate::firstOrCreate(
+            [
+                'business_id' => $business->id,
+                'language' => $language,
+                'is_default' => true,
+            ],
+            [
+                'name' => "Default {$language} Template",
+                'prompt_template' => 'Write a positive Google review for this business based on the rating.',
+                'min_rating' => 4,
+                'max_rating' => 5,
+                'is_active' => true,
+            ]
+        );
+    }
+    
+    private function hasCredits(Business $business): bool
+    {
+        $credit = AICredit::where('business_id', $business->id)->first();
+        return $credit && $credit->remaining_credits > 0;
+    }
+    
+    private function deductCredits(Business $business, int $amount, string $reason)
+    {
+        $credit = AICredit::where('business_id', $business->id)->first();
+        
+        $credit->decrement('remaining_credits', $amount);
+        $credit->increment('used_credits', $amount);
+        
+        AICreditLog::create([
+            'ai_credit_id' => $credit->id,
+            'user_id' => $business->user_id,
+            'type' => 'debit',
+            'amount' => $amount,
+            'reason' => $reason,
+        ]);
+    }
+    
+    private function getFallbackReviews(): string
+    {
+        return json_encode([
+            ['text' => 'Great experience! Highly recommended for everyone.'],
+            ['text' => 'Excellent service and quality. Will visit again!'],
+            ['text' => 'Very good place. Staff is friendly and helpful.'],
+        ]);
+    }
+}
+4.3 Google Place Service
+// app/Services/Google/GooglePlaceService.php
+
+namespace App\Services\Google;
+
+use Illuminate\Support\Facades\Http;
+
+class GooglePlaceService
+{
+    private $apiKey;
+    private $baseUrl = 'https://maps.googleapis.com/maps/api/place';
+    
+    public function __construct()
+    {
+        $this->apiKey = config('services.google.places_api_key');
+    }
+    
+    public function searchPlaces(string $query, string $location = 'India')
+    {
+        $response = Http::get($this->baseUrl . '/textsearch/json', [
+            'query' => $query . ' ' . $location,
+            'key' => $this->apiKey,
+        ]);
+        
+        if ($response->failed()) {
+            throw new \Exception('Google Places API error');
+        }
+        
+        return $response->json('results', []);
+    }
+    
+    public function getPlaceDetails(string $placeId)
+    {
+        $response = Http::get($this->baseUrl . '/details/json', [
+            'place_id' => $placeId,
+            'fields' => 'name,formatted_address,formatted_phone_number,website,rating,user_ratings_total,geometry',
+            'key' => $this->apiKey,
+        ]);
+        
+        if ($response->failed()) {
+            throw new \Exception('Google Places API error');
+        }
+        
+        return $response->json('result');
+    }
+    
+    public function getReviewLink(string $placeId): string
+    {
+        return "https://search.google.com/local/writereview?placeid={$placeId}";
+    }
+    
+    public function getPlaceIdFromUrl(string $url): ?string
+    {
+        // Parse Google Maps URL to extract place ID
+        if (preg_match('/placeid=([a-zA-Z0-9_-]+)/', $url, $matches)) {
+            return $matches[1];
+        }
+        
+        if (preg_match('/\/([a-zA-Z0-9_-]{20,})\//', $url, $matches)) {
+            return $matches[1];
+        }
+        
+        return null;
+    }
+    
+    public function validatePlaceId(string $placeId): bool
+    {
+        try {
+            $details = $this->getPlaceDetails($placeId);
+            return !empty($details);
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+}
+4.4 Razorpay Payment Service
+// app/Services/Payment/RazorpayService.php
+
+namespace App\Services\Payment;
+
+use Razorpay\Api\Api;
+use App\Models\Payment;
+use App\Models\Subscription;
+use App\Models\User;
+use App\Models\Plan;
+use Exception;
+
+class RazorpayService
+{
+    private $api;
+    
+    public function __construct()
+    {
+        $this->api = new Api(
+            config('services.razorpay.key_id'),
+            config('services.razorpay.key_secret')
+        );
+    }
+    
+    public function createOrder(Plan $plan, User $user, ?string $couponCode = null): array
+    {
+        $amount = $this->calculateAmount($plan, $couponCode);
+        
+        $orderData = [
+            'receipt' => 'rcpt_' . uniqid(),
+            'amount' => $amount * 100, // Convert to paise
+            'currency' => 'INR',
+            'notes' => [
+                'user_id' => $user->id,
+                'plan_id' => $plan->id,
+                'plan_name' => $plan->name,
+            ],
+        ];
+        
+        $order = $this->api->order->create($orderData);
+        
+        return [
+            'order_id' => $order['id'],
+            'amount' => $amount,
+            'currency' => 'INR',
+            'key' => config('services.razorpay.key_id'),
+            'name' => config('app.name'),
+            'description' => "Subscription: {$plan->name}",
+            'prefill' => [
+                'name' => $user->name,
+                'email' => $user->email,
+                'contact' => $user->phone ?? '',
+            ],
+            'theme' => [
+                'color' => '#3399cc',
+            ],
+        ];
+    }
+    
+    public function createSubscription(Plan $plan, User $user): array
+    {
+        $subscriptionData = [
+            'plan_id' => $plan->razorpay_plan_id,
+            'customer_notify' => 1,
+            'total_count' => $plan->billing_cycle === 'yearly' ? 1 : 12,
+            'notes' => [
+                'user_id' => $user->id,
+                'plan_id' => $plan->id,
+            ],
+        ];
+        
+        $subscription = $this->api->subscription->create($subscriptionData);
+        
+        return [
+            'subscription_id' => $subscription['id'],
+            'short_url' => $subscription['short_url'],
+        ];
+    }
+    
+    public function verifyPayment(array $data): bool
+    {
+        try {
+            $this->api->utility->verifyPaymentSignature([
+                'razorpay_order_id' => $data['razorpay_order_id'],
+                'razorpay_payment_id' => $data['razorpay_payment_id'],
+                'razorpay_signature' => $data['razorpay_signature'],
+            ]);
+            
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+    
+    public function handleWebhook(array $payload): void
+    {
+        $event = $payload['event'];
+        
+        switch ($event) {
+            case 'payment.captured':
+                $this->handlePaymentCaptured($payload['payload']['payment']['entity']);
+                break;
+                
+            case 'subscription.activated':
+                $this->handleSubscriptionActivated($payload['payload']['subscription']['entity']);
+                break;
+                
+            case 'subscription.charged':
+                $this->handleSubscriptionCharged($payload['payload']['subscription']['entity']);
+                break;
+                
+            case 'subscription.cancelled':
+                $this->handleSubscriptionCancelled($payload['payload']['subscription']['entity']);
+                break;
+                
+            case 'subscription.expired':
+                $this->handleSubscriptionExpired($payload['payload']['subscription']['entity']);
+                break;
+        }
+    }
+    
+    private function handlePaymentCaptured(array $payment)
+    {
+        Payment::where('razorpay_payment_id', $payment['id'])
+            ->update(['status' => 'completed']);
+            
+        // Activate subscription
+        $paymentRecord = Payment::where('razorpay_payment_id', $payment['id'])->first();
+        if ($paymentRecord && $paymentRecord->subscription) {
+            $paymentRecord->subscription->update([
+                'status' => 'active',
+                'starts_at' => now(),
+            ]);
+        }
+    }
+    
+    private function handleSubscriptionActivated(array $subscription)
+    {
+        Subscription::where('razorpay_subscription_id', $subscription['id'])
+            ->update(['status' => 'active']);
+    }
+    
+    private function handleSubscriptionCharged(array $subscription)
+    {
+        // Extend subscription end date
+        $sub = Subscription::where('razorpay_subscription_id', $subscription['id'])->first();
+        if ($sub) {
+            $sub->update(['ends_at' => now()->addMonth()]);
+        }
+    }
+    
+    private function handleSubscriptionCancelled(array $subscription)
+    {
+        Subscription::where('razorpay_subscription_id', $subscription['id'])
+            ->update([
+                'status' => 'cancelled',
+                'cancelled_at' => now(),
+            ]);
+    }
+    
+    private function handleSubscriptionExpired(array $subscription)
+    {
+        Subscription::where('razorpay_subscription_id', $subscription['id'])
+            ->update(['status' => 'expired']);
+    }
+    
+    private function calculateAmount(Plan $plan, ?string $couponCode): float
+    {
+        $amount = $plan->price;
+        
+        if ($couponCode) {
+            $coupon = \App\Models\Coupon::where('code', $couponCode)
+                ->where('is_active', true)
+                ->where('valid_from', '<=', now())
+                ->where('valid_until', '>=', now())
+                ->first();
+            
+            if ($coupon) {
+                if ($coupon->discount_type === 'percentage') {
+                    $discount = $amount * ($coupon->discount_value / 100);
+                } else {
+                    $discount = $coupon->discount_value;
+                }
+                
+                if ($coupon->max_discount) {
+                    $discount = min($discount, $coupon->max_discount);
+                }
+                
+                $amount -= $discount;
+            }
+        }
+        
+        return max($amount, 0);
+    }
+}
+
+4.5 WhatsApp Service
+// app/Services/WhatsApp/WhatsAppService.php
+
+namespace App\Services\WhatsApp;
+
+use App\Models\WhatsAppMessage;
+use App\Models\Business;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+class WhatsAppService
+{
+    private $apiUrl;
+    private $accessToken;
+    private $phoneNumberId;
+    
+    public function __construct()
+    {
+        $this->apiUrl = config('services.whatsapp.api_url');
+        $this->accessToken = config('services.whatsapp.access_token');
+        $this->phoneNumberId = config('services.whatsapp.phone_number_id');
+    }
+    
+    public function sendReviewRequest(
+        Business $business,
+        string $customerPhone,
+        string $customerName = null,
+        string $qrSlug = null
+    ): WhatsAppMessage
+    {
+        $reviewLink = $qrSlug ? url('/r/' . $qrSlug) : $business->google_review_link;
+        
+        $message = $this->buildReviewRequestMessage($business, $customerName, $reviewLink);
+        
+        $messageRecord = WhatsAppMessage::create([
+            'business_id' => $business->id,
+            'customer_phone' => $this->formatPhone($customerPhone),
+            'customer_name' => $customerName,
+            'message_type' => 'review_request',
+            'message_content' => $message,
+            'status' => 'pending',
+        ]);
+        
+        try {
+            $response = $this->sendWhatsAppMessage($customerPhone, $message);
+            
+            $messageRecord->update([
+                'status' => 'sent',
+                'whatsapp_message_id' => $response['messages'][0]['id'] ?? null,
+                'response' => $response,
+                'sent_at' => now(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('WhatsApp Send Error', ['error' => $e->getMessage()]);
+            $messageRecord->update(['status' => 'failed']);
+        }
+        
+        return $messageRecord;
+    }
+    
+    public function sendBulkReviewRequests(
+        Business $business,
+        array $customers,
+        string $messageType = 'review_request'
+    ): array
+    {
+        $results = [];
+        
+        foreach ($customers as $customer) {
+            $results[] = $this->sendReviewRequest(
+                $business,
+                $customer['phone'],
+                $customer['name'] ?? null,
+                $customer['qr_slug'] ?? null
+            );
+            
+            // Add delay to avoid rate limiting
+            usleep(200000); // 200ms delay
+        }
+        
+        return $results;
+    }
+    
+    public function sendTemplateMessage(
+        string $phone,
+        string $templateName,
+        array $parameters = []
+    ): array
+    {
+        $components = [];
+        
+        if (!empty($parameters)) {
+            $components[] = [
+                'type' => 'body',
+                'parameters' => array_map(fn($p) => ['type' => 'text', 'text' => $p], $parameters),
+            ];
+        }
+        
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'to' => $this->formatPhone($phone),
+            'type' => 'template',
+            'template' => [
+                'name' => $templateName,
+                'language' => ['code' => 'en'],
+                'components' => $components,
+            ],
+        ];
+        
+        return $this->apiCall($payload);
+    }
+    
+    private function buildReviewRequestMessage(
+        Business $business,
+        ?string $customerName,
+        string $reviewLink
+    ): string
+    {
+        $greeting = $customerName ? "Hi {$customerName}" : "Hello";
+        
+        return <<<MESSAGE
+{$greeting}! 👋
+
+Thank you for visiting {$business->name}!
+
+We'd love to hear about your experience. Your feedback helps us serve you better.
+
+⭐ Click the link below to leave a quick review:
+{$reviewLink}
+
+It takes just 30 seconds! 🙏
+
+Thank you for your support!
+- Team {$business->name}
+MESSAGE;
+    }
+    
+    private function sendWhatsAppMessage(string $phone, string $message): array
+    {
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'to' => $this->formatPhone($phone),
+            'type' => 'text',
+            'text' => ['body' => $message],
+        ];
+        
+        return $this->apiCall($payload);
+    }
+    
+    private function apiCall(array $payload): array
+    {
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $this->accessToken,
+            'Content-Type' => 'application/json',
+        ])->post($this->apiUrl . '/' . $this->phoneNumberId . '/messages', $payload);
+        
+        if ($response->failed()) {
+            throw new \Exception('WhatsApp API error: ' . $response->body());
+        }
+        
+        return $response->json();
+    }
+    
+    private function formatPhone(string $phone): string
+    {
+        // Remove all non-digit characters
+        $phone = preg_replace('/\D/', '', $phone);
+        
+        // Add India country code if not present
+        if (strlen($phone) === 10) {
+            $phone = '91' . $phone;
+        }
+        
+        return $phone;
+    }
+    
+    public function handleWebhook(array $payload): void
+    {
+        if (isset($payload['entry'][0]['changes'][0]['value']['statuses'])) {
+            foreach ($payload['entry'][0]['changes'][0]['value']['statuses'] as $status) {
+                $this->updateMessageStatus(
+                    $status['id'],
+                    $status['status']
+                );
+            }
+        }
+    }
+    
+    private function updateMessageStatus(string $messageId, string $status)
+    {
+        WhatsAppMessage::where('whatsapp_message_id', $messageId)
+            ->update(['status' => $status]);
+    }
+}
+4.6 SMS Service
+// app/Services/SMS/SMSService.php
+
+namespace App\Services\SMS;
+
+use App\Models\SMSMessage;
+use App\Models\Business;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+class SMSService
+{
+    private $apiKey;
+    private $senderId;
+    private $apiUrl;
+    
+    public function __construct()
+    {
+        $this->apiKey = config('services.sms.api_key');
+        $this->senderId = config('services.sms.sender_id');
+        $this->apiUrl = config('services.sms.api_url');
+    }
+    
+    public function sendReviewRequest(
+        Business $business,
+        string $phone,
+        string $customerName = null,
+        string $qrSlug = null
+    ): SMSMessage
+    {
+        $reviewLink = $qrSlug ? url('/r/' . $qrSlug) : $business->google_review_link;
+        
+        $message = $this->buildMessage($business, $customerName, $reviewLink);
+        
+        $messageRecord = SMSMessage::create([
+            'business_id' => $business->id,
+            'customer_phone' => $phone,
+            'customer_name' => $customerName,
+            'message_content' => $message,
+            'status' => 'pending',
+        ]);
+        
+        try {
+            $response = $this->sendSMS($phone, $message);
+            
+            $messageRecord->update([
+                'status' => 'sent',
+                'provider_message_id' => $response['message_id'] ?? null,
+                'cost' => $response['cost'] ?? 0,
+                'sent_at' => now(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('SMS Send Error', ['error' => $e->getMessage()]);
+            $messageRecord->update(['status' => 'failed']);
+        }
+        
+        return $messageRecord;
+    }
+    
+    public function sendBulk(Business $business, array $recipients): array
+    {
+        $results = [];
+        
+        foreach ($recipients as $recipient) {
+            $results[] = $this->sendReviewRequest(
+                $business,
+                $recipient['phone'],
+                $recipient['name'] ?? null,
+                $recipient['qr_slug'] ?? null
+            );
+            
+            usleep(100000); // 100ms delay
+        }
+        
+        return $results;
+    }
+    
+    private function buildMessage(Business $business, ?string $name, string $link): string
+    {
+        $greeting = $name ? "Hi {$name}" : "Hello";
+        
+        return "{$greeting}, thanks for visiting {$business->name}! Please share your experience: {$link}";
+    }
+    
+    private function sendSMS(string $phone, string $message): array
+    {
+        // Example using Msg91 / Twilio / Any Indian SMS provider
+        $response = Http::withHeaders([
+            'authkey' => $this->apiKey,
+            'Content-Type' => 'application/json',
+        ])->post($this->apiUrl, [
+            'sender' => $this->senderId,
+            'route' => 4,
+            'country' => 91,
+            'sms' => [
+                [
+                    'message' => $message,
+                    'to' => [$phone],
+                ],
+            ],
+        ]);
+        
+        if ($response->failed()) {
+            throw new \Exception('SMS API error');
+        }
+        
+        return $response->json();
+    }
+}
+4.7 Analytics Service
+// app/Services/Analytics/AnalyticsService.php
+
+namespace App\Services\Analytics;
+
+use App\Models\Business;
+use App\Models\QRCode;
+use App\Models\QRScan;
+use App\Models\Review;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+
+class AnalyticsService
+{
+    public function getDashboardStats(Business $business): array
+    {
+        $totalScans = QRScan::where('business_id', $business->id)->count();
+        $totalReviews = Review::where('business_id', $business->id)->count();
+        $avgRating = Review::where('business_id', $business->id)->avg('rating') ?? 0;
+        $conversionRate = $totalScans > 0 ? ($totalReviews / $totalScans) * 100 : 0;
+        
+        // Monthly growth
+        $lastMonthScans = QRScan::where('business_id', $business->id)
+            ->whereBetween('scanned_at', [
+                now()->subMonth()->startOfMonth(),
+                now()->subMonth()->endOfMonth()
+            ])->count();
+            
+        $thisMonthScans = QRScan::where('business_id', $business->id)
+            ->whereBetween('scanned_at', [
+                now()->startOfMonth(),
+                now()->endOfMonth()
+            ])->count();
+            
+        $monthlyGrowth = $lastMonthScans > 0 
+            ? (($thisMonthScans - $lastMonthScans) / $lastMonthScans) * 100 
+            : 0;
+        
+        return [
+            'total_scans' => $totalScans,
+            'total_reviews' => $totalReviews,
+            'avg_rating' => round($avgRating, 1),
+            'conversion_rate' => round($conversionRate, 2),
+            'monthly_growth' => round($monthlyGrowth, 2),
+            'this_month_scans' => $thisMonthScans,
+            'this_month_reviews' => Review::where('business_id', $business->id)
+                ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
+                ->count(),
+        ];
+    }
+    
+    public function getScanAnalytics(Business $business, string $period = 'daily'): array
+    {
+        $query = QRScan::where('business_id', $business->id);
+        
+        $groupBy = match($period) {
+            'hourly' => DB::raw('DATE_FORMAT(scanned_at, "%Y-%m-%d %H:00")'),
+            'daily' => DB::raw('DATE(scanned_at)'),
+            'weekly' => DB::raw('YEARWEEK(scanned_at)'),
+            'monthly' => DB::raw('DATE_FORMAT(scanned_at, "%Y-%m")'),
+            default => DB::raw('DATE(scanned_at)'),
+        };
+        
+        $data = $query->select([
+                DB::raw($groupBy . ' as period'),
+                DB::raw('COUNT(*) as scans'),
+                DB::raw('SUM(CASE WHEN converted_to_review = 1 THEN 1 ELSE 0 END) as reviews'),
+            ])
+            ->groupBy('period')
+            ->orderBy('period')
+            ->get();
+        
+        return [
+            'labels' => $data->pluck('period')->toArray(),
+            'scans' => $data->pluck('scans')->toArray(),
+            'reviews' => $data->pluck('reviews')->toArray(),
+        ];
+    }
+    
+    public function getDeviceAnalytics(Business $business): array
+    {
+        return QRScan::where('business_id', $business->id)
+            ->select('device_type', DB::raw('COUNT(*) as count'))
+            ->groupBy('device_type')
+            ->get()
+            ->toArray();
+    }
+    
+    public function getBranchWiseAnalytics(Business $business): array
+    {
+        if (!$business->branches()->exists()) {
+            return [];
+        }
+        
+        $branches = $business->branches()->withCount([
+            'qrCodes as total_scans' => function ($q) {
+                $q->join('qr_scans', 'qr_codes.id', '=', 'qr_scans.qr_code_id')
+                  ->select(DB::raw('COUNT(*)'));
+            },
+        ])->with(['reviews' => function ($q) {
+            $q->select('branch_id', 
+                DB::raw('COUNT(*) as count'),
+                DB::raw('AVG(rating) as avg_rating')
+            )->groupBy('branch_id');
+        }])->get();
+        
+        return $branches->map(function ($branch) {
+            return [
+                'branch_id' => $branch->id,
+                'branch_name' => $branch->name,
+                'total_scans' => $branch->total_scans,
+                'total_reviews' => $branch->reviews->sum('count'),
+                'avg_rating' => $branch->reviews->avg('avg_rating') ?? 0,
+            ];
+        })->toArray();
+    }
+    
+    public function getEmployeeWiseAnalytics(Business $business): array
+    {
+        return $business->employees()->with(['qrCodes' => function ($q) {
+            $q->withCount('scans', 'reviews');
+        }])->get()->map(function ($employee) {
+            $totalScans = $employee->qrCodes->sum('scans_count');
+            $totalReviews = $employee->qrCodes->sum('reviews_count');
+            
+            return [
+                'employee_id' => $employee->id,
+                'employee_name' => $employee->name,
+                'total_scans' => $totalScans,
+                'total_reviews' => $totalReviews,
+                'conversion_rate' => $totalScans > 0 ? round(($totalReviews / $totalScans) * 100, 2) : 0,
+                'avg_rating' => Review::where('employee_id', $employee->id)->avg('rating') ?? 0,
+            ];
+        })->toArray();
+    }
+    
+    public function getRatingDistribution(Business $business): array
+    {
+        return Review::where('business_id', $business->id)
+            ->select('rating', DB::raw('COUNT(*) as count'))
+            ->groupBy('rating')
+            ->orderBy('rating', 'desc')
+            ->get()
+            ->toArray();
+    }
+    
+    public function getConversionFunnel(Business $business): array
+    {
+        $totalScans = QRScan::where('business_id', $business->id)->count();
+        $ratingSelected = QRScan::where('business_id', $business->id)
+            ->where('converted_to_review', true)->count();
+        $reviewSubmitted = Review::where('business_id', $business->id)
+            ->where('status', 'published')->count();
+        
+        return [
+            [
+                'step' => 'QR Scanned',
+                'count' => $totalScans,
+                'percentage' => 100,
+            ],
+            [
+                'step' => 'Rating Selected',
+                'count' => $ratingSelected,
+                'percentage' => $totalScans > 0 ? round(($ratingSelected / $totalScans) * 100, 2) : 0,
+            ],
+            [
+                'step' => 'Review Published',
+                'count' => $reviewSubmitted,
+                'percentage' => $totalScans > 0 ? round(($reviewSubmitted / $totalScans) * 100, 2) : 0,
+            ],
+        ];
+    }
+}
+PHASE 5: Landing Page Implementation (Week 5-6)
+// app/Http/Controllers/Landing/LandingPageController.php
+
+namespace App\Http\Controllers\Landing;
+
+use App\Http\Controllers\Controller;
+use App\Models\QRCode;
+use App\Models\QRScan;
+use App\Services\QR\QRCodeService;
+use App\Services\AI\AIService;
+use Illuminate\Http\Request;
+
+class LandingPageController extends Controller
+{
+    public function reviewPage(string $slug)
+    {
+        $qrCode = QRCode::where('slug', $slug)
+            ->where('is_active', true)
+            ->with('business')
+            ->firstOrFail();
+        
+        // Record scan
+        $scanService = app(QRCodeService::class);
+        $scan = $scanService->recordScan($qrCode, [
+            'ip_address' => request()->ip(),
+        ]);
+        
+        session(['current_scan_id' => $scan->id]);
+        
+        return view('landing.review-page', [
+            'qrCode' => $qrCode,
+            'business' => $qrCode->business,
+            'scan' => $scan,
+        ]);
+    }
+    
+    public function generateReview(Request $request, string $slug)
+    {
+        $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'language' => 'nullable|in:en,hi,gu',
+        ]);
+        
+        $qrCode = QRCode::where('slug', $slug)->firstOrFail();
+        $aiService = app(AIService::class);
+        
+        try {
+            $suggestions = $aiService->generateReviewSuggestions(
+                $qrCode->business,
+                $request->rating,
+                $request->language ?? 'en'
+            );
+            
+            // Mark scan as converted
+            if ($scanId = session('current_scan_id')) {
+                QRScan::where('id', $scanId)->update(['converted_to_review' => true]);
+                $qrCode->increment('review_count');
+            }
+            
+            return response()->json([
+                'success' => true,
+                'suggestions' => $suggestions,
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
+    
+    public function submitReview(Request $request, string $slug)
+    {
+        $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'review_text' => 'required|string|max:1000',
+            'customer_name' => 'nullable|string|max:100',
+        ]);
+        
+        $qrCode = QRCode::where('slug', $slug)->firstOrFail();
+        
+        // Save review
+        $review = $qrCode->reviews()->create([
+            'business_id' => $qrCode->business_id,
+            'branch_id' => $qrCode->branch_id,
+            'scan_id' => session('current_scan_id'),
+            'rating' => $request->rating,
+            'review_text' => $request->review_text,
+            'customer_name' => $request->customer_name,
+            'source' => 'qr_scan',
+            'status' => 'pending',
+        ]);
+        
+        // Get Google review link
+        $googleLink = $qrCode->business->google_review_link;
+        
+        return response()->json([
+            'success' => true,
+            'review_id' => $review->id,
+            'google_review_link' => $googleLink,
+        ]);
+    }
+    
+    public function markReviewPublished(Request $request, string $slug)
+    {
+        $request->validate([
+            'review_id' => 'required|exists:reviews,id',
+        ]);
+        
+        $review = \App\Models\Review::find($request->review_id);
+        $review->update([
+            'status' => 'published',
+        ]);
+        
+        // Track customer for loyalty
+        $this->trackCustomer($review);
+        
+        return response()->json(['success' => true]);
+    }
+    
+    private function trackCustomer($review)
+    {
+        // Check if customer exists
+        $customer = \App\Models\Customer::where('business_id', $review->business_id)
+            ->where('phone', $review->customer_phone)
+            ->first();
+            
+        if ($customer) {
+            $customer->increment('visit_count');
+            $customer->increment('review_count');
+            $customer->update([
+                'last_visit' => now(),
+                'is_returning' => true,
+            ]);
+        } else {
+            \App\Models\Customer::create([
+                'business_id' => $review->business_id,
+                'phone' => $review->customer_phone,
+                'email' => $review->customer_email,
+                'name' => $review->customer_name,
+                'visit_count' => 1,
+                'review_count' => 1,
+                'first_visit' => now(),
+                'last_visit' => now(),
+            ]);
+        }
+    }
+}
+Landing Page Blade Template
+<!-- resources/views/landing/review-page.blade.php -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave a Review - {{ $business->name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .star-rating { display: flex; flex-direction: row-reverse; justify-content: center; }
+        .star-rating input { display: none; }
+        .star-rating label { font-size: 3rem; color: #ddd; cursor: pointer; transition: color 0.2s; }
+        .star-rating input:checked ~ label, .star-rating label:hover, .star-rating label:hover ~ label { color: #fbbf24; }
+        .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-md mx-auto px-4 py-8">
+        
+        <!-- Business Info -->
+        <div class="text-center mb-8">
+            @if($business->logo)
+                <img src="{{ Storage::url($business->logo) }}" alt="{{ $business->name }}" class="w-24 h-24 rounded-full mx-auto mb-4 object-cover">
+            @endif
+            <h1 class="text-2xl font-bold text-gray-800">{{ $business->name }}</h1>
+            <p class="text-gray-500">{{ $business->city }}, {{ $business->state }}</p>
+        </div>
+        
+        <!-- Step 1: Rating -->
+        <div id="step-rating" class="bg-white rounded-2xl shadow-lg p-8 mb-6">
+            <h2 class="text-xl font-semibold text-center mb-6">How was your experience?</h2>
+            
+            <div class="star-rating mb-6">
+                @for($i = 5; $i >= 1; $i--)
+                    <input type="radio" id="star{{ $i }}" name="rating" value="{{ $i }}">
+                    <label for="star{{ $i }}"><i class="fas fa-star"></i></label>
+                @endfor
+            </div>
+            
+            <p id="rating-text" class="text-center text-gray-500 mb-6">Tap to rate</p>
+            
+            <!-- Language Selector -->
+            <div class="flex justify-center gap-3 mb-6">
+                <button class="lang-btn px-4 py-2 rounded-full text-sm border-2 border-blue-500 bg-blue-500 text-white" data-lang="en">English</button>
+                <button class="lang-btn px-4 py-2 rounded-full text-sm border-2 border-gray-300 text-gray-600" data-lang="hi">हिन्दी</button>
+                <button class="lang-btn px-4 py-2 rounded-full text-sm border-2 border-gray-300 text-gray-600" data-lang="gu">ગુજરાતી</button>
+            </div>
+            
+            <button id="btn-generate" class="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                Get Review Suggestions
+            </button>
+        </div>
+        
+        <!-- Step 2: Review Selection -->
+        <div id="step-review" class="bg-white rounded-2xl shadow-lg p-8 mb-6 hidden">
+            <h2 class="text-xl font-semibold text-center mb-2">Choose or write your review</h2>
+            <p class="text-center text-gray-500 text-sm mb-6">Select a suggestion or write your own</p>
+            
+            <div id="suggestions-container" class="space-y-3 mb-6">
+                <!-- AI Suggestions will be loaded here -->
+            </div>
+            
+            <!-- Custom Review -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Or write your own:</label>
+                <textarea id="custom-review" rows="4" class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" placeholder="Share your experience..."></textarea>
+            </div>
+            
+            <!-- Customer Name (Optional) -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Your Name (Optional)</label>
+                <input type="text" id="customer-name" class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter your name">
+            </div>
+            
+            <button id="btn-submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                Submit Review
+            </button>
+        </div>
+        
+        <!-- Step 3: Google Redirect -->
+        <div id="step-google" class="bg-white rounded-2xl shadow-lg p-8 mb-6 hidden text-center">
+            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-check text-green-600 text-3xl"></i>
+            </div>
+            <h2 class="text-xl font-semibold mb-2">Thank you!</h2>
+            <p class="text-gray-500 mb-6">Your review is ready! Click below to publish it on Google.</p>
+            
+            <a id="google-link" href="#" target="_blank" class="block w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition mb-4">
+                <i class="fab fa-google mr-2"></i> Post on Google
+            </a>
+            
+            <button id="btn-confirm" class="w-full border-2 border-gray-300 text-gray-600 py-3 rounded-xl font-semibold hover:bg-gray-50 transition">
+                I've Posted the Review
+            </button>
+            
+            <button id="btn-skip" class="w-full text-gray-400 py-2 mt-2 text-sm hover:text-gray-600">
+                Skip this step
+            </button>
+        </div>
+        
+        <!-- Final Thank You -->
+        <div id="step-thankyou" class="bg-white rounded-2xl shadow-lg p-8 mb-6 hidden text-center">
+            <div class="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-heart text-yellow-500 text-4xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">You're Amazing!</h2>
+            <p class="text-gray-500">Thank you for taking the time to share your experience. We appreciate your feedback!</p>
+        </div>
+        
+        <!-- Loading Overlay -->
+        <div id="loading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+            <div class="bg-white rounded-2xl p-8 text-center">
+                <div class="loading-spinner mx-auto mb-4"></div>
+                <p class="text-gray-600" id="loading-text">Generating suggestions...</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let selectedRating = 0;
+        let selectedLanguage = 'en';
+        let selectedReview = '';
+        let reviewId = null;
+        const slug = '{{ $qrCode->slug }}';
+        
+        // Rating Texts
+        const ratingTexts = {
+            1: 'Terrible',
+            2: 'Poor',
+            3: 'Average',
+            4: 'Good',
+            5: 'Excellent!'
+        };
+        
+        const ratingTextsHi = {
+            1: 'बहुत बुरा',
+            2: 'बुरा',
+            3: 'ठीक',
+            4: 'अच्छा',
+            5: 'बहुत अच्छा!'
+        };
+        
+        const ratingTextsGu = {
+            1: 'ખૂબ ખરાબ',
+            2: 'ખરાબ',
+            3: 'સામાન્ય',
+            4: 'સારું',
+            5: 'ખૂબ સારું!'
+        };
+        
+        // Star Rating Click
+        document.querySelectorAll('input[name="rating"]').forEach(input => {
+            input.addEventListener('change', function() {
+                selectedRating = parseInt(this.value);
+                document.getElementById('btn-generate').disabled = false;
+                updateRatingText();
+            });
+        });
+        
+        function updateRatingText() {
+            const texts = selectedLanguage === 'hi' ? ratingTextsHi : 
+                         selectedLanguage === 'gu' ? ratingTextsGu : ratingTexts;
+            document.getElementById('rating-text').textContent = texts[selectedRating];
+        }
+        
+        // Language Selection
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.lang-btn').forEach(b => {
+                    b.classList.remove('border-blue-500', 'bg-blue-500', 'text-white');
+                    b.classList.add('border-gray-300', 'text-gray-600');
+                });
+                this.classList.add('border-blue-500', 'bg-blue-500', 'text-white');
+                this.classList.remove('border-gray-300', 'text-gray-600');
+                selectedLanguage = this.dataset.lang;
+                updateRatingText();
+            });
+        });
+        
+        // Generate Suggestions
+        document.getElementById('btn-generate').addEventListener('click', async function() {
+            showLoading('Generating suggestions...');
+            
+            try {
+                const response = await fetch(`/r/${slug}/generate-review`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    body: JSON.stringify({ rating: selectedRating, language: selectedLanguage })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displaySuggestions(data.suggestions);
+                    showStep('step-review');
+                } else {
+                    alert(data.message || 'Error generating suggestions');
+                }
+            } catch (error) {
+                alert('Network error. Please try again.');
+            }
+            
+            hideLoading();
+        });
+        
+        function displaySuggestions(suggestions) {
+            const container = document.getElementById('suggestions-container');
+            container.innerHTML = '';
+            
+            suggestions.forEach((text, index) => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-card border-2 border-gray-200 rounded-xl p-4 cursor-pointer hover:border-blue-500 transition';
+                div.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <span class="flex-shrink-0 w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium">${index + 1}</span>
+                        <p class="text-gray-700">${text}</p>
+                    </div>
+                `;
+                div.addEventListener('click', function() {
+                    document.querySelectorAll('.suggestion-card').forEach(c => c.classList.remove('border-blue-500', 'bg-blue-50'));
+                    this.classList.add('border-blue-500', 'bg-blue-50');
+                    selectedReview = text;
+                    document.getElementById('custom-review').value = '';
+                    document.getElementById('btn-submit').disabled = false;
+                });
+                container.appendChild(div);
+            });
+        }
+        
+        // Custom Review Input
+        document.getElementById('custom-review').addEventListener('input', function() {
+            if (this.value.trim()) {
+                selectedReview = this.value.trim();
+                document.querySelectorAll('.suggestion-card').forEach(c => c.classList.remove('border-blue-500', 'bg-blue-50'));
+                document.getElementById('btn-submit').disabled = false;
+            } else {
+                selectedReview = '';
+                document.getElementById('btn-submit').disabled = true;
+            }
+        });
+        
+        // Submit Review
+        document.getElementById('btn-submit').addEventListener('click', async function() {
+            if (!selectedReview) return;
+            
+            showLoading('Submitting review...');
+            
+            try {
+                const response = await fetch(`/r/${slug}/submit-review`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    body: JSON.stringify({
+                        rating: selectedRating,
+                        review_text: selectedReview,
+                        customer_name: document.getElementById('customer-name').value
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    reviewId = data.review_id;
+                    document.getElementById('google-link').href = data.google_review_link;
+                    showStep('step-google');
+                } else {
+                    alert('Error submitting review');
+                }
+            } catch (error) {
+                alert('Network error. Please try again.');
+            }
+            
+            hideLoading();
+        });
+        
+        // Confirm Posted
+        document.getElementById('btn-confirm').addEventListener('click', async function() {
+            if (reviewId) {
+                await fetch(`/r/${slug}/mark-published`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    body: JSON.stringify({ review_id: reviewId })
+                });
+            }
+            showStep('step-thankyou');
+        });
+        
+        // Skip
+        document.getElementById('btn-skip').addEventListener('click', function() {
+            showStep('step-thankyou');
+        });
+        
+        // Utility Functions
+        function showStep(stepId) {
+            document.querySelectorAll('[id^="step-"]').forEach(el => el.classList.add('hidden'));
+            document.getElementById(stepId).classList.remove('hidden');
+        }
+        
+        function showLoading(text) {
+            document.getElementById('loading-text').textContent = text;
+            document.getElementById('loading').classList.remove('hidden');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
+ PHASE 6: Middleware Implementation (Week 6)
+// app/Http/Middleware/CheckSubscription.php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use App\Models\Subscription;
+use Illuminate\Support\Facades\Auth;
+
+class CheckSubscription
+{
+    public function handle($request, Closure $next, $feature = null)
+    {
+        $user = Auth::user();
+        $business = $user->business;
+        
+        if (!$business) {
+            return redirect()->route('onboarding');
+        }
+        
+        $subscription = $user->activeSubscription;
+        
+        if (!$subscription) {
+            return redirect()->route('plans.index')->with('error', 'Please subscribe to a plan.');
+        }
+        
+        // Check specific feature access
+        if ($feature) {
+            $limits = $subscription->limits ?? [];
+            
+            switch ($feature) {
+                case 'whatsapp':
+                    if (!($limits['whatsapp'] ?? false)) {
+                        return redirect()->route('plans.index')->with('error', 'Upgrade to Premium for WhatsApp integration.');
+                    }
+                    break;
+                    
+                case 'sms':
+                    if (!($limits['sms'] ?? false)) {
+                        return redirect()->route('plans.index')->with('error', 'Upgrade your plan for SMS campaigns.');
+                    }
+                    break;
+                    
+                case 'nfc':
+                    if (!($limits['nfc'] ?? false)) {
+                        return redirect()->route('plans.index')->with('error', 'Upgrade to Premium for NFC cards.');
+                    }
+                    break;
+                    
+                case 'multi_branch':
+                    if (!($limits['branches'] > 1 ?? false)) {
+                        return redirect()->route('plans.index')->with('error', 'Upgrade to Enterprise for multiple branches.');
+                    }
+                    break;
+            }
+        }
+        
+        return $next($request);
+    }
+}
+
+// app/Http/Middleware/CheckQRLimit.php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use App\Models\QRCode;
+
+class CheckQRLimit
+{
+    public function handle($request, Closure $next)
+    {
+        $user = Auth::user();
+        $subscription = $user->activeSubscription;
+        $limits = $subscription->limits ?? [];
+        $qrLimit = $limits['qr_codes'] ?? 1;
+        
+        // -1 means unlimited
+        if ($qrLimit !== -1) {
+            $currentCount = QRCode::where('business_id', $user->business->id)->count();
+            
+            if ($currentCount >= $qrLimit) {
+                return redirect()->route('qr-codes.index')
+                    ->with('error', "You've reached your QR code limit ({$qrLimit}). Upgrade your plan for more.");
+            }
+        }
+        
+        return $next($request);
+    }
+}
+
+// app/Http/Middleware/AdminMiddleware.php
+
+namespace App\Http\Middleware;
+
+use Closure;
+
+class AdminMiddleware
+{
+    public function handle($request, Closure $next)
+    {
+        if (auth()->user()->role !== 'super_admin') {
+            abort(403, 'Unauthorized access.');
+        }
+        
+        return $next($request);
+    }
+}
+
+ PHASE 7: Seeders (Week 6)
+
+// database/seeders/PlanSeeder.php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use App\Models\Plan;
+
+class PlanSeeder extends Seeder
+{
+    public function run()
+    {
+        $plans = [
+            [
+                'name' => 'Free',
+                'slug' => 'free',
+                'description' => 'Get started with basic features',
+                'price' => 0,
+                'annual_price' => 0,
+                'trial_days' => 0,
+                'billing_cycle' => 'monthly',
+                'is_active' => true,
+                'sort_order' => 1,
+                'features' => [
+                    '1 QR Code',
+                    '20 Reviews/month',
+                    'Basic Analytics',
+                    'Email Support',
+                ],
+                'limits' => [
+                    'qr_codes' => 1,
+                    'reviews_per_month' => 20,
+                    'branches' => 1,
+                    'employees' => 0,
+                    'ai_credits' => 10,
+                    'analytics_days' => 7,
+                    'whatsapp' => false,
+                    'sms' => false,
+                    'nfc' => false,
+                    'white_label' => false,
+                    'custom_branding' => false,
+                    'remove_branding' => false,
+                    'email_campaign' => false,
+                ],
+            ],
+            [
+                'name' => 'Basic',
+                'slug' => 'basic',
+                'description' => 'Perfect for small businesses',
+                'price' => 299,
+                'annual_price' => 2990,
+                'trial_days' => 7,
+                'billing_cycle' => 'monthly',
+                'is_active' => true,
+                'sort_order' => 2,
+                'features' => [
+                    'Unlimited QR Codes',
+                    'Unlimited Reviews',
+                    'Full Analytics',
+                    'AI Review Suggestions',
+                    'PDF Reports',
+                    'Email Support',
+                ],
+                'limits' => [
+                    'qr_codes' => -1,
+                    'reviews_per_month' => -1,
+                    'branches' => 1,
+                    'employees' => 5,
+                    'ai_credits' => 100,
+                    'analytics_days' => 30,
+                    'whatsapp' => false,
+                    'sms' => false,
+                    'nfc' => false,
+                    'white_label' => false,
+                    'custom_branding' => false,
+                    'remove_branding' => false,
+                    'email_campaign' => true,
+                ],
+            ],
+            [
+                'name' => 'Premium',
+                'slug' => 'premium',
+                'description' => 'Best for growing businesses',
+                'price' => 699,
+                'annual_price' => 6990,
+                'trial_days' => 14,
+                'billing_cycle' => 'monthly',
+                'is_active' => true,
+                'sort_order' => 3,
+                'features' => [
+                    'Everything in Basic',
+                    'Multi Branch Support',
+                    'WhatsApp Integration',
+                    'NFC Review Cards',
+                    'Branding Removal',
+                    'Priority Support',
+                ],
+                'limits' => [
+                    'qr_codes' => -1,
+                    'reviews_per_month' => -1,
+                    'branches' => 5,
+                    'employees' => 25,
+                    'ai_credits' => 500,
+                    'analytics_days' => 90,
+                    'whatsapp' => true,
+                    'sms' => false,
+                    'nfc' => true,
+                    'white_label' => false,
+                    'custom_branding' => true,
+                    'remove_branding' => true,
+                    'email_campaign' => true,
+                ],
+            ],
+            [
+                'name' => 'Enterprise',
+                'slug' => 'enterprise',
+                'description' => 'For large organizations',
+                'price' => 0,
+                'annual_price' => 0,
+                'trial_days' => 30,
+                'billing_cycle' => 'one_time',
+                'is_active' => true,
+                'sort_order' => 4,
+                'features' => [
+                    'Everything in Premium',
+                    'Unlimited Everything',
+                    'White Label Solution',
+                    'Dedicated Account Manager',
+                    'Custom Integrations',
+                    'SLA Guarantee',
+                ],
+                'limits' => [
+                    'qr_codes' => -1,
+                    'reviews_per_month' => -1,
+                    'branches' => -1,
+                    'employees' => -1,
+                    'ai_credits' => -1,
+                    'analytics_days' => 365,
+                    'whatsapp' => true,
+                    'sms' => true,
+                    'nfc' => true,
+                    'white_label' => true,
+                    'custom_branding' => true,
+                    'remove_branding' => true,
+                    'email_campaign' => true,
+                ],
+            ],
+        ];
+        
+        foreach ($plans as $plan) {
+            Plan::create([
+                'name' => $plan['name'],
+                'slug' => $plan['slug'],
+                'description' => $plan['description'],
+                'price' => $plan['price'],
+                'annual_price' => $plan['annual_price'],
+                'trial_days' => $plan['trial_days'],
+                'billing_cycle' => $plan['billing_cycle'],
+                'is_active' => $plan['is_active'],
+                'sort_order' => $plan['sort_order'],
+                'features' => $plan['features'],
+                'limits' => $plan['limits'],
+            ]);
+        }
+    }
+}
+PHASE 8: Cron Jobs & Scheduling (Week 7)
+// app/Console/Kernel.php
+
+protected function schedule(Schedule $schedule)
+{
+    // Reset monthly review limits
+    $schedule->command('subscription:reset-monthly-limits')
+        ->monthlyOn(1, '00:00');
+    
+    // Reset AI credits monthly
+    $schedule->command('ai:reset-credits')
+        ->monthlyOn(1, '00:00');
+    
+    // Send review reminders
+    $schedule->command('reminders:send-pending')
+        ->everyFifteenMinutes();
+    
+    // Check expired subscriptions
+    $schedule->command('subscription:check-expired')
+        ->dailyAt('00:00');
+    
+    // Update employee performance
+    $schedule->command('analytics:update-employee-performance')
+        ->dailyAt('01:00');
+    
+    // Clean up old scan data (older than 1 year for free users)
+    $schedule->command('analytics:cleanup-old-data')
+        ->monthlyOn(15, '02:00');
+    
+    // Sync Google reviews (if implemented)
+    $schedule->command('google:sync-reviews')
+        ->hourly();
+}
+
+📅 COMPLETE TIMELINE
+Week
+Phase
+Deliverables
+1	Project Setup	Laravel setup, DB schema, migrations
+2	Folder Structure	Routes, Models, Controllers structure
+3-4	Core Services	QR, AI, Google Place, Payment services
+5-6	Landing Page	Review flow, UI, JS integration
+6	Middleware	Subscription checks, limits
+7	Business Dashboard	Stats, charts, QR management
+8	Analytics	Scan analytics, conversion, reports
+9-10	Admin Panel	Full admin functionality
+11-12	Integrations	WhatsApp, SMS, Email, NFC
+13	Future Features	AI Reply, Reminders, PDF Reports
+14	Testing & QA	Unit tests, bug fixes
+15	Deployment	Server setup, deployment
+
+✅ COMPLETE FEATURE CHECKLIST
+Core Features
+ Business Registration
+ Business Profile with Google Place ID
+ QR Code Generation (PNG, SVG, PDF)
+ Table-wise QR (Restaurant)
+ Room-wise QR (Hotel)
+ Employee-wise QR
+ Bulk QR Generation
+ Landing Page for Review
+ Star Rating Selection
+ AI Review Suggestions (EN, HI, GU)
+ Custom Review Writing
+ Google Review Redirect
+ Review Tracking
+Dashboard
+ Total QR Scans
+ Total Reviews
+ Average Rating
+ Monthly Growth
+ Branch-wise Reports
+ QR Management
+ Download QR (PNG, SVG, PDF)
+Analytics
+ Daily Scan Report
+ Weekly Report
+ Monthly Report
+ Device Type Analysis
+ Location Analysis
+ Conversion Rate
+ Customer Feedback History
+ Repeat Visitors
+ Loyalty Tracking
+Admin Panel
+ All Businesses Management
+ Subscription Management
+ Payment Tracking
+ Coupon Management
+ Support Tickets
+ Reports
+ User Management
+ AI Credits Management
+ Plan Management
+Subscription Plans
+ Free Plan (1 QR, 20 reviews)
+ Basic ₹299/month
+ Premium ₹699/month
+ Enterprise Custom
+Future Features
+ WhatsApp Review Request
+ SMS Campaign
+ NFC Review Card
+ Email Campaign
+ Review Reminder
+ AI Reply to Reviews
+ Review PDF Report
+ Employee Performance
+ White Label
+This is your complete roadmap. Start with Phase 1 and work through each phase systematically! 🚀
+
+
+
+
+

@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Foundation\Application;
@@ -11,8 +12,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        // <--- ADD YOUR ALIASES RIGHT HERE --->
+        $middleware->alias([
+            'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'subscription' => \App\Http\Middleware\CheckSubscription::class,
+            'qr.limit' => \App\Http\Middleware\CheckQRLimit::class,
+            'aicredits' => \App\Http\Middleware\CheckAICredits::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
+    ?>
