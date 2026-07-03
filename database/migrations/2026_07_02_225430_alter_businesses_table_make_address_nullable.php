@@ -10,19 +10,23 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-    {
-        Schema::table('businesses', function (Blueprint $table) {
-            //
-        });
-    }
+{
+    Schema::table('businesses', function (Blueprint $table) {
+        $table->string('address')->nullable()->change();
+        $table->string('website')->nullable()->change();
+        $table->string('email')->nullable()->change();
+    });
+}
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
-    {
-        Schema::table('businesses', function (Blueprint $table) {
-            //
-        });
-    }
+{
+    Schema::table('businesses', function (Blueprint $table) {
+        $table->string('address')->nullable(false)->change();
+        $table->string('website')->nullable(false)->change();
+        $table->string('email')->nullable(false)->change();
+    });
+}
 };

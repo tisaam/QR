@@ -46,7 +46,7 @@ class Business extends Model
 
     public function employees()
     {
-        return $this->hasMany(User::class, 'id')->where('role', 'employee'); // Adjust based on how you link employees
+        return $this->hasMany(User::class, 'id')->where('role', 'employee');
     }
 
     public function activeSubscription()
@@ -54,5 +54,11 @@ class Business extends Model
         return $this->hasOneThrough(Subscription::class, User::class, 'id', 'user_id', 'user_id', 'id')
                     ->where('subscriptions.status', 'active')
                     ->latestOfMany();
+    }
+
+    // ---> ADD THIS MISSING METHOD <---
+    public function subscriptions()
+    {
+        return $this->hasManyThrough(Subscription::class, User::class, 'id', 'user_id', 'user_id', 'id');
     }
 }
