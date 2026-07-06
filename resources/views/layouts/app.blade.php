@@ -77,6 +77,8 @@
                     </a>
 
                     <!-- User Dropdown -->
+                                        @auth
+                    <!-- User Dropdown -->
                     <div class="relative" id="user-menu">
                         <button class="flex items-center space-x-2 text-gray-700 focus:outline-none">
                             <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
@@ -89,10 +91,17 @@
                             <a href="{{ route('settings.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
-                                <button class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</button>
+                                <button class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</button>
                             </form>
                         </div>
                     </div>
+                    @else
+                    <!-- Guest Menu -->
+                    <div class="flex items-center space-x-3">
+                        <a href="{{ route('login') }}" class="text-sm font-medium text-gray-700 hover:text-indigo-600">Login</a>
+                        <a href="{{ route('register') }}" class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">Sign Up</a>
+                    </div>
+                    @endauth
                 </div>
             </header>
 

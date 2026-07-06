@@ -46,43 +46,86 @@ class QRCodeService
         }
         return $qrCodes;
     }
-   public function generateQRImages(QRCode $qrCode, string $url)
+         public function generateQRImages(QRCode $qrCode, string $url)
     {
-        // Generate SVG (Does NOT require GD extension, works instantly)
-        $svgPath = 'qr/' . $qrCode->slug . '.svg';
-        $svgImage = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
+        if (!extension_loaded('gd')) {
+            throw new \Exception('PHP GD extension is missing. You cannot generate JPG files without it.');
+        }
+
+        $jpgPath = 'qr/' . $qrCode->slug . '.jpg';
+        
+        // Get the absolute real path on your hard drive (e.g., C:\xampp\htdocs\project\storage\app\public\qr\...)
+        $absolutePath = Storage::disk('public')->path($jpgPath);
+
+        // Make sure the folder exists
+        if (!file_exists(dirname($absolutePath))) {
+            mkdir(dirname($absolutePath), 0775, true);
+        }
+
+        // 1. Generate the raw PNG string
+        $pngString = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')
             ->size(400)
             ->margin(2)
             ->generate($url);
-        Storage::put('public/' . $svgPath, $svgImage);
-        $qrCode->update(['qr_svg_path' => $svgPath]);
 
-        // For the PNG download button, we will just use the SVG for now
-        // You can set the png path to the svg path so the download button doesn't break
-        $qrCode->update(['qr_image_path' => $svgPath]); 
-    }
+        // 2. Load the PNG string into PHP GD
+        $img = @imagecreatefromstring($pngString);
+        
+        if (!$img) {
+            // If GD fails to read it, just save the raw PNG data with a .jpg extension 
+            // (Most image viewers will still open it correctly based on its internal data)
+            file_put_contents($absolutePath, $pngString);
+        } else {
+            // 3. Create a white background (JPGs don't support transparency)
+            $w = imagesx($img);
+            $h = imagesy($img);
+            $whiteBg = imagecreatetruecolor($w, $h);
+            $white = imagecolorallocate($whiteBg, 255, 255, 255);
+            imagefill($whiteBg, 0, 0, $white);
+            
+            // 4. Merge the QR code onto the white background
+            imagecopy($whiteBg, $img, 0, 0, 0, 0, $w, $h);
 
-    public function download(QRCode $qrCode, string $format = 'png')
+            // 5. Write the JPG DIRECTLY to the hard drive (bypassing Laravel Storage)
+            imagejpeg($whiteBg, $absolutePath, 90);
+
+            // 6. Free up memory
+            imagedestroy($img);
+            imagedestroy($whiteBg);
+        }
+
+        // Update the database
+        $qrCode->update([
+            'qr_svg_path' => null, 
+            'qr_image_path' => $jpgPath  
+        ]); 
+    }     
+   
+            public function download(QRCode $qrCode, string $format = 'jpg')
     {
-        $path = $format === 'svg' ? $qrCode->qr_svg_path : $qrCode->qr_image_path;
-        return Storage::disk('public')->download($path, $qrCode->slug . '.' . $format);
-    }
+        $path = $qrCode->qr_image_path;
 
-    public function recordScan(QRCode $qrCode, array $scanData): \App\Models\QRScan
-    {
-        $scan = \App\Models\QRScan::create([
-            'qr_code_id' => $qrCode->id,
-            'business_id' => $qrCode->business_id,
-            'ip_address' => $scanData['ip_address'] ?? request()->ip(),
-            'device_type' => $this->detectDevice(),
-            'browser' => $this->detectBrowser(),
-            'os' => $this->detectOS(),
-            'scanned_at' => now(),
+        if (!$path || !Storage::disk('public')->exists($path)) {
+            abort(404, 'QR Code file not found.');
+        }
+
+        $fullPath = Storage::disk('public')->path($path);
+        $fileName = $qrCode->slug . '.jpg';
+
+        // THIS IS THE FIX: Clear any invisible spaces/newlines that break image downloads
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        // Use streamDownload to safely send the pure binary image data
+        return response()->streamDownload(function () use ($fullPath) {
+            readfile($fullPath);
+        }, $fileName, [
+            'Content-Type' => 'image/jpeg',
+            'Content-Length' => filesize($fullPath),
         ]);
-        $qrCode->increment('scan_count');
-        return $scan;
     }
-
+    
     private function generateUniqueSlug(string $name): string
     {
         $slug = Str::slug($name) . '-' . Str::random(6);

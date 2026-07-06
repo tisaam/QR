@@ -14,7 +14,11 @@ class PlanController extends Controller
             ->orderBy('sort_order', 'asc')
             ->get();
 
-        $currentPlan = auth()->user()->activeSubscription?->plan;
+        // Safely get the current plan only if the user is logged in
+        $currentPlan = null;
+        if (auth()->check()) {
+            $currentPlan = auth()->user()->activeSubscription?->plan;
+        }
 
         return view('subscription.plans', compact('plans', 'currentPlan'));
     }

@@ -24,10 +24,16 @@
         </thead>
         <tbody>
             @forelse($qrCodes as $qr)
-                <tr class="bg-white border-b hover:bg-gray-50">
+                               <tr class="bg-white border-b hover:bg-gray-50">
+                    <!-- Preview Image -->
                     <td class="px-6 py-4">
-                        <img src="{{ $qr->png_url ?? 'https://via.placeholder.com/40' }}" alt="QR" class="w-10 h-10 rounded border p-1 bg-white">
+                        @if($qr->qr_image_path)
+                            <img src="{{ Storage::disk('public')->url($qr->qr_image_path) }}" alt="QR" class="w-10 h-10 rounded border p-1 bg-white object-contain">
+                        @else
+                            <div class="w-10 h-10 bg-gray-100 rounded border flex items-center justify-center text-gray-400 text-xs">None</div>
+                        @endif
                     </td>
+                    
                     <td class="px-6 py-4">
                         <div class="font-medium text-gray-900">{{ $qr->name }}</div>
                         <div class="text-xs text-gray-400">{{ strtoupper($qr->type) }} {{ $qr->identifier ? '- ' . $qr->identifier : '' }}</div>
@@ -39,12 +45,14 @@
                             {{ $qr->is_active ? 'Active' : 'Disabled' }}
                         </span>
                     </td>
+                    <!-- Actions: Only JPG Download -->
                     <td class="px-6 py-4 text-right space-x-2">
-                        <a href="{{ route('qr-codes.download', [$qr, 'png']) }}" class="text-blue-600 hover:text-blue-800" title="Download PNG"><i class="fas fa-download"></i></a>
-                        <a href="{{ route('qr-codes.download', [$qr, 'svg']) }}" class="text-gray-600 hover:text-gray-800" title="Download SVG"><i class="fas fa-file-code"></i></a>
+                        <a href="{{ route('qr-codes.download', [$qr, 'jpg']) }}" class="text-blue-600 hover:text-blue-800 text-lg" title="Download JPG">
+                            <i class="fas fa-download"></i>
+                        </a>
                         <form action="{{ route('qr-codes.destroy', $qr) }}" method="POST" class="inline-block" onsubmit="return confirm('Delete this QR code?')">
                             @csrf @method('DELETE')
-                            <button type="submit" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+                            <button type="submit" class="text-red-600 hover:text-red-800 text-lg"><i class="fas fa-trash"></i></button>
                         </form>
                     </td>
                 </tr>
