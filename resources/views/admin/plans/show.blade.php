@@ -3,232 +3,155 @@
 @section('title', 'Plan Details - ' . $plan->name)
 
 @section('content')
-<div class="mb-6">
-    <a href="{{ route('admin.plans.index') }}" class="text-indigo-600 hover:text-indigo-800 text-sm">
-        <i class="fas fa-arrow-left mr-1"></i> Back to Plans
-    </a>
-</div>
+<style>
+    .plan-page { font-family: Arial, sans-serif; color: #1f2937; }
+    .plan-back { margin-bottom: 1rem; }
+    .plan-back a { color: #4f46e5; text-decoration: none; font-weight: 600; font-size: 0.95rem; }
+    .plan-back a:hover { color: #3730a3; }
+    .plan-layout { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+    .plan-main { display: flex; flex-direction: column; gap: 1rem; }
+    .plan-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 0.8rem; padding: 1.1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .plan-card h2, .plan-card h3 { margin: 0 0 0.7rem; color: #111827; }
+    .plan-pill { display: inline-block; padding: 0.28rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; }
+    .plan-pill.active { background: #dcfce7; color: #166534; }
+    .plan-pill.inactive { background: #f3f4f6; color: #4b5563; }
+    .plan-price { font-size: 1.85rem; font-weight: 700; color: #4f46e5; }
+    .plan-meta { color: #6b7280; font-size: 0.92rem; margin: 0.25rem 0 0; }
+    .plan-feature-grid { display: grid; grid-template-columns: 1fr; gap: 0.6rem; }
+    .plan-feature-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.7rem; background: #f9fafb; border-radius: 0.65rem; }
+    .plan-feature-icon { width: 1.6rem; height: 1.6rem; border-radius: 999px; background: #dcfce7; color: #166534; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; }
+    .stats-box { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border-radius: 0.65rem; margin-bottom: 0.65rem; }
+    .stats-box.indigo { background: #eef2ff; }
+    .stats-box.green { background: #ecfdf5; }
+    .stats-box.yellow { background: #fef3c7; }
+    .stats-box .label { font-size: 0.72rem; text-transform: uppercase; font-weight: 700; }
+    .stats-box .value { font-size: 1.25rem; font-weight: 700; }
+    .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 0.45rem 0; border-bottom: 1px solid #f3f4f6; }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { color: #6b7280; font-size: 0.9rem; }
+    .detail-value { color: #111827; font-weight: 600; font-size: 0.92rem; }
+    .danger-card { border: 1px solid #fecaca; }
+    .danger-btn { width: 100%; padding: 0.75rem 0.9rem; border: 1px solid #fecaca; background: #fef2f2; color: #b91c1c; border-radius: 0.65rem; font-weight: 700; cursor: pointer; }
+    @media (min-width: 992px) { .plan-layout { grid-template-columns: 2fr 1fr; } .plan-feature-grid { grid-template-columns: repeat(2, 1fr); } }
+</style>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Main Content -->
-    <div class="lg:col-span-2 space-y-6">
-        <!-- Header Card -->
-        <div class="bg-white rounded-xl shadow-sm border p-6">
-            <div class="flex items-start justify-between">
-                <div>
-                    <div class="flex items-center space-x-3 mb-2">
-                        <h2 class="text-2xl font-bold text-gray-800">{{ $plan->name }}</h2>
-                        <span class="px-3 py-1 text-xs rounded-full font-medium {{ $plan->is_active ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600' }}">
-                            {{ $plan->is_active ? 'Active' : 'Inactive' }}
-                        </span>
-                    </div>
-                    <p class="text-sm text-gray-400 mb-4">Slug: {{ $plan->slug }}</p>
-                    <div class="flex items-baseline space-x-2 mb-3">
-                        <span class="text-4xl font-bold text-indigo-600">₹{{ number_format($plan->price) }}</span>
-                        <span class="text-gray-500 font-medium">/ {{ ucfirst($plan->billing_cycle) }}</span>
-                    </div>
-                    @if($plan->annual_price)
-                        <p class="text-sm text-gray-500">
-                            <i class="fas fa-calendar-alt mr-1"></i> Yearly Price: <span class="font-semibold text-gray-700">₹{{ number_format($plan->annual_price) }}</span>
-                        </p>
-                    @endif
-                    @if($plan->trial_days > 0)
-                        <p class="text-sm text-gray-500 mt-1">
-                            <i class="fas fa-clock mr-1"></i> Trial Period: <span class="font-semibold text-gray-700">{{ $plan->trial_days }} Days</span>
-                        </p>
-                    @endif
-                </div>
-                <a href="{{ route('admin.plans.edit', $plan) }}" class="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-medium hover:bg-indigo-100 transition">
-                    <i class="fas fa-pen mr-1"></i> Edit Plan
-                </a>
-            </div>
-            @if($plan->description)
-                <div class="mt-6 pt-6 border-t">
-                    <p class="text-sm text-gray-500 mb-1">Description</p>
-                    <p class="text-gray-800">{{ $plan->description }}</p>
-                </div>
-            @endif
-        </div>
-
-        <!-- Features List -->
-        <div class="bg-white rounded-xl shadow-sm border p-6">
-            <h3 class="text-lg font-bold text-gray-800 mb-4">
-                <i class="fas fa-list-check text-green-500 mr-2"></i>Plan Features
-            </h3>
-            @if($plan->features && count($plan->features) > 0)
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    @foreach($plan->features as $feature)
-                        <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                            <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-check text-green-600 text-xs"></i>
-                            </div>
-                            <span class="text-sm text-gray-700">{{ $feature }}</span>
-                        </div>
-                    @endforeach
-                </div>
-            @else
-                <p class="text-sm text-gray-400 text-center py-6">No features listed for this plan.</p>
-            @endif
-        </div>
+<div class="plan-page">
+    <div class="plan-back">
+        <a href="{{ route('admin.plans.index') }}"><i class="fas fa-arrow-left"></i> Back to Plans</a>
     </div>
 
-    <!-- Sidebar -->
-    <div class="space-y-6">
-        <!-- Stats -->
-        <div class="bg-white rounded-xl shadow-sm border p-6">
-            <h3 class="font-semibold text-gray-800 mb-4">Statistics</h3>
-            <div class="space-y-4">
-                <div class="flex items-center justify-between p-3 bg-indigo-50 rounded-lg">
+    <div class="plan-layout">
+        <div class="plan-main">
+            <div class="plan-card">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem;">
                     <div>
-                        <p class="text-xs text-indigo-600">Total Subscribers</p>
-                        <p class="text-2xl font-bold text-indigo-700">{{ $plan->subscriptions->count() }}</p>
+                        <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.45rem; flex-wrap:wrap;">
+                            <h2>{{ $plan->name }}</h2>
+                            <span class="plan-pill {{ $plan->is_active ? 'active' : 'inactive' }}">{{ $plan->is_active ? 'Active' : 'Inactive' }}</span>
+                        </div>
+                        <p class="plan-meta">Slug: {{ $plan->slug }}</p>
+                        <div style="margin:0.6rem 0 0.4rem;">
+                            <span class="plan-price">₹{{ number_format($plan->price) }}</span>
+                            <span style="color:#6b7280; font-weight:600;">/ {{ ucfirst($plan->billing_cycle) }}</span>
+                        </div>
+                        @if($plan->annual_price)
+                            <p class="plan-meta"><i class="fas fa-calendar-alt"></i> Yearly Price: ₹{{ number_format($plan->annual_price) }}</p>
+                        @endif
+                        @if($plan->trial_days > 0)
+                            <p class="plan-meta"><i class="fas fa-clock"></i> Trial Period: {{ $plan->trial_days }} Days</p>
+                        @endif
                     </div>
-                    <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-users text-indigo-600"></i>
-                    </div>
+                    <a href="{{ route('admin.plans.edit', $plan) }}" class="plan-btn" style="padding:0.6rem 0.8rem; text-decoration:none; display:inline-block;">Edit Plan</a>
                 </div>
-                <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                    <div>
-                        <p class="text-xs text-green-600">Active Subscribers</p>
-                        <p class="text-2xl font-bold text-green-700">{{ $plan->subscriptions->where('status', 'active')->count() }}</p>
+                @if($plan->description)
+                    <div style="margin-top:0.9rem; padding-top:0.9rem; border-top:1px solid #e5e7eb;">
+                        <p style="margin:0 0 0.25rem; color:#6b7280; font-size:0.85rem;">Description</p>
+                        <p style="margin:0; color:#111827;">{{ $plan->description }}</p>
                     </div>
-                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-check-circle text-green-600"></i>
+                @endif
+            </div>
+
+            <div class="plan-card">
+                <h3><i class="fas fa-list-check" style="color:#16a34a;"></i> Plan Features</h3>
+                @if($plan->features && count($plan->features) > 0)
+                    <div class="plan-feature-grid">
+                        @foreach($plan->features as $feature)
+                            <div class="plan-feature-item">
+                                <span class="plan-feature-icon"><i class="fas fa-check"></i></span>
+                                <span>{{ $feature }}</span>
+                            </div>
+                        @endforeach
                     </div>
-                </div>
-                <div class="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                    <div>
-                        <p class="text-xs text-yellow-600">Est. Monthly Revenue</p>
-                        <p class="text-2xl font-bold text-yellow-700">₹{{ number_format($plan->subscriptions->where('status', 'active')->count() * $plan->price) }}</p>
-                    </div>
-                    <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-rupee-sign text-yellow-600"></i>
-                    </div>
-                </div>
+                @else
+                    <p style="margin:0; color:#9ca3af; text-align:center; padding:1rem 0;">No features listed for this plan.</p>
+                @endif
             </div>
         </div>
 
-        <!-- Limits & Access -->
-        <div class="bg-white rounded-xl shadow-sm border p-6">
-            <h3 class="font-semibold text-gray-800 mb-4">Limits & Access</h3>
-            @php $limits = $plan->limits ?? []; @endphp
-            <div class="space-y-3 text-sm">
-                <div class="flex justify-between">
-                    <span class="text-gray-500">QR Codes</span>
-                    <span class="font-medium text-gray-800 {{ ($limits['qr_codes'] ?? -1) == -1 ? 'text-green-600' : '' }}">
-                        {{ ($limits['qr_codes'] ?? -1) == -1 ? 'Unlimited' : $limits['qr_codes'] }}
-                    </span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-500">Reviews / Month</span>
-                    <span class="font-medium text-gray-800 {{ ($limits['reviews_per_month'] ?? -1) == -1 ? 'text-green-600' : '' }}">
-                        {{ ($limits['reviews_per_month'] ?? -1) == -1 ? 'Unlimited' : $limits['reviews_per_month'] }}
-                    </span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-500">Branches</span>
-                    <span class="font-medium text-gray-800">{{ $limits['branches'] ?? 1 }}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-500">Employees</span>
-                    <span class="font-medium text-gray-800">{{ $limits['employees'] ?? 0 }}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-500">AI Credits</span>
-                    <span class="font-medium text-gray-800">{{ $limits['ai_credits'] ?? 0 }}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-500">Analytics Days</span>
-                    <span class="font-medium text-gray-800">{{ $limits['analytics_days'] ?? 7 }} Days</span>
-                </div>
-
-                <div class="border-t pt-3 mt-3 space-y-2.5">
-                    <p class="text-xs font-semibold text-gray-400 uppercase">Integrations</p>
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-500">WhatsApp</span>
-                        @if($limits['whatsapp'] ?? false)
-                            <span class="text-green-600"><i class="fas fa-check-circle"></i> Enabled</span>
-                        @else
-                            <span class="text-gray-400"><i class="fas fa-times-circle"></i> Disabled</span>
-                        @endif
+        <div class="plan-main">
+            <div class="plan-card">
+                <h3>Statistics</h3>
+                <div class="stats-box indigo">
+                    <div>
+                        <div class="label" style="color:#4338ca;">Total Subscribers</div>
+                        <div class="value" style="color:#4338ca;">{{ $plan->subscriptions->count() }}</div>
                     </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-500">SMS</span>
-                        @if($limits['sms'] ?? false)
-                            <span class="text-green-600"><i class="fas fa-check-circle"></i> Enabled</span>
-                        @else
-                            <span class="text-gray-400"><i class="fas fa-times-circle"></i> Disabled</span>
-                        @endif
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-500">NFC Support</span>
-                        @if($limits['nfc'] ?? false)
-                            <span class="text-green-600"><i class="fas fa-check-circle"></i> Enabled</span>
-                        @else
-                            <span class="text-gray-400"><i class="fas fa-times-circle"></i> Disabled</span>
-                        @endif
-                    </div>
+                    <i class="fas fa-users" style="color:#4338ca;"></i>
                 </div>
-
-                <div class="border-t pt-3 mt-3 space-y-2.5">
-                    <p class="text-xs font-semibold text-gray-400 uppercase">Branding</p>
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-500">White Label</span>
-                        @if($limits['white_label'] ?? false)
-                            <span class="text-green-600"><i class="fas fa-check-circle"></i> Yes</span>
-                        @else
-                            <span class="text-gray-400"><i class="fas fa-times-circle"></i> No</span>
-                        @endif
+                <div class="stats-box green">
+                    <div>
+                        <div class="label" style="color:#166534;">Active Subscribers</div>
+                        <div class="value" style="color:#166534;">{{ $plan->subscriptions->where('status', 'active')->count() }}</div>
                     </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-500">Custom Branding</span>
-                        @if($limits['custom_branding'] ?? false)
-                            <span class="text-green-600"><i class="fas fa-check-circle"></i> Yes</span>
-                        @else
-                            <span class="text-gray-400"><i class="fas fa-times-circle"></i> No</span>
-                        @endif
+                    <i class="fas fa-check-circle" style="color:#166534;"></i>
+                </div>
+                <div class="stats-box yellow">
+                    <div>
+                        <div class="label" style="color:#92400e;">Est. Monthly Revenue</div>
+                        <div class="value" style="color:#92400e;">₹{{ number_format($plan->subscriptions->where('status', 'active')->count() * $plan->price) }}</div>
                     </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-500">Remove Branding</span>
-                        @if($limits['remove_branding'] ?? false)
-                            <span class="text-green-600"><i class="fas fa-check-circle"></i> Yes</span>
-                        @else
-                            <span class="text-gray-400"><i class="fas fa-times-circle"></i> No</span>
-                        @endif
-                    </div>
+                    <i class="fas fa-rupee-sign" style="color:#92400e;"></i>
                 </div>
             </div>
-        </div>
 
-        <!-- Meta Info -->
-        <div class="bg-white rounded-xl shadow-sm border p-6">
-            <h3 class="font-semibold text-gray-800 mb-4">Meta Info</h3>
-            <div class="space-y-3 text-sm">
-                <div class="flex justify-between">
-                    <span class="text-gray-500">Sort Order</span>
-                    <span class="font-medium text-gray-800">{{ $plan->sort_order }}</span>
+            <div class="plan-card">
+                <h3>Limits & Access</h3>
+                @php $limits = $plan->limits ?? []; @endphp
+                <div class="detail-row"><span class="detail-label">QR Codes</span><span class="detail-value">{{ ($limits['qr_codes'] ?? -1) == -1 ? 'Unlimited' : ($limits['qr_codes'] ?? 0) }}</span></div>
+                <div class="detail-row"><span class="detail-label">Reviews / Month</span><span class="detail-value">{{ ($limits['reviews_per_month'] ?? -1) == -1 ? 'Unlimited' : ($limits['reviews_per_month'] ?? 0) }}</span></div>
+                <div class="detail-row"><span class="detail-label">Branches</span><span class="detail-value">{{ $limits['branches'] ?? 1 }}</span></div>
+                <div class="detail-row"><span class="detail-label">Employees</span><span class="detail-value">{{ $limits['employees'] ?? 0 }}</span></div>
+                <div class="detail-row"><span class="detail-label">AI Credits</span><span class="detail-value">{{ $limits['ai_credits'] ?? 0 }}</span></div>
+                <div class="detail-row"><span class="detail-label">Analytics Days</span><span class="detail-value">{{ $limits['analytics_days'] ?? 7 }} Days</span></div>
+                <div style="margin-top:0.8rem;">
+                    <p style="font-size:0.75rem; text-transform:uppercase; color:#9ca3af; margin:0 0 0.4rem; font-weight:700;">Integrations</p>
+                    <div class="detail-row"><span class="detail-label">WhatsApp</span><span class="detail-value">{{ ($limits['whatsapp'] ?? false) ? 'Enabled' : 'Disabled' }}</span></div>
+                    <div class="detail-row"><span class="detail-label">SMS</span><span class="detail-value">{{ ($limits['sms'] ?? false) ? 'Enabled' : 'Disabled' }}</span></div>
+                    <div class="detail-row"><span class="detail-label">NFC Support</span><span class="detail-value">{{ ($limits['nfc'] ?? false) ? 'Enabled' : 'Disabled' }}</span></div>
                 </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-500">Created</span>
-                    <span class="font-medium text-gray-800">{{ $plan->created_at->format('M d, Y') }}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-500">Last Updated</span>
-                    <span class="font-medium text-gray-800">{{ $plan->updated_at->diffForHumans() }}</span>
+                <div style="margin-top:0.8rem;">
+                    <p style="font-size:0.75rem; text-transform:uppercase; color:#9ca3af; margin:0 0 0.4rem; font-weight:700;">Branding</p>
+                    <div class="detail-row"><span class="detail-label">White Label</span><span class="detail-value">{{ ($limits['white_label'] ?? false) ? 'Yes' : 'No' }}</span></div>
+                    <div class="detail-row"><span class="detail-label">Custom Branding</span><span class="detail-value">{{ ($limits['custom_branding'] ?? false) ? 'Yes' : 'No' }}</span></div>
+                    <div class="detail-row"><span class="detail-label">Remove Branding</span><span class="detail-value">{{ ($limits['remove_branding'] ?? false) ? 'Yes' : 'No' }}</span></div>
                 </div>
             </div>
-        </div>
 
-        <!-- Danger Zone -->
-        <div class="bg-white rounded-xl shadow-sm border border-red-200 p-6">
-            <h3 class="font-semibold text-red-600 mb-2">Danger Zone</h3>
-            <p class="text-xs text-gray-500 mb-4">Once deleted, this action cannot be undone.</p>
-            <form method="POST" action="{{ route('admin.plans.destroy', $plan) }}" onsubmit="return confirm('Are you absolutely sure you want to delete this plan?')">
-                @csrf @method('DELETE')
-                <button type="submit" class="w-full px-4 py-2.5 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition border border-red-200">
-                    <i class="fas fa-trash mr-2"></i>Delete Plan
-                </button>
-            </form>
+            <div class="plan-card">
+                <h3>Meta Info</h3>
+                <div class="detail-row"><span class="detail-label">Sort Order</span><span class="detail-value">{{ $plan->sort_order }}</span></div>
+                <div class="detail-row"><span class="detail-label">Created</span><span class="detail-value">{{ $plan->created_at->format('M d, Y') }}</span></div>
+                <div class="detail-row"><span class="detail-label">Last Updated</span><span class="detail-value">{{ $plan->updated_at->diffForHumans() }}</span></div>
+            </div>
+
+            <div class="plan-card danger-card">
+                <h3 style="color:#b91c1c;">Danger Zone</h3>
+                <p style="margin:0 0 0.8rem; color:#6b7280; font-size:0.9rem;">Once deleted, this action cannot be undone.</p>
+                <form method="POST" action="{{ route('admin.plans.destroy', $plan) }}" onsubmit="return confirm('Are you absolutely sure you want to delete this plan?')">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="danger-btn"><i class="fas fa-trash"></i> Delete Plan</button>
+                </form>
+            </div>
         </div>
     </div>
 </div>
