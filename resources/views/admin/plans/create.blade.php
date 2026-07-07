@@ -3,144 +3,139 @@
 @section('title', 'Create Plan')
 
 @section('content')
-<div class="mb-6">
-    <a href="{{ route('admin.plans.index') }}" class="text-indigo-600 hover:text-indigo-800 text-sm">
-        <i class="fas fa-arrow-left mr-1"></i> Back to Plans
-    </a>
-</div>
+<style>
+    .plan-page { font-family: Arial, sans-serif; color: #1f2937; }
+    .plan-back { margin-bottom: 1rem; }
+    .plan-back a { color: #4f46e5; text-decoration: none; font-weight: 600; font-size: 0.95rem; }
+    .plan-back a:hover { color: #3730a3; }
+    .plan-form { display: block; }
+    .plan-layout { display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
+    .plan-main { display: flex; flex-direction: column; gap: 1.25rem; }
+    .plan-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 0.8rem; padding: 1.25rem; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .plan-card h2, .plan-card h3 { margin: 0 0 0.9rem; color: #111827; font-size: 1.05rem; }
+    .plan-card label { display: block; font-size: 0.9rem; font-weight: 600; color: #374151; margin-bottom: 0.35rem; }
+    .plan-card .field-grid { display: grid; grid-template-columns: 1fr; gap: 0.9rem; }
+    .plan-card .field-col-2 { grid-column: 1 / -1; }
+    .plan-card input, .plan-card select, .plan-card textarea {
+        width: 100%; padding: 0.7rem 0.8rem; border: 1px solid #d1d5db; border-radius: 0.6rem; font-size: 0.95rem; box-sizing: border-box; background: #fff;
+    }
+    .plan-card textarea { min-height: 100px; resize: vertical; }
+    .plan-card .hint { font-size: 0.8rem; color: #6b7280; margin-top: 0.35rem; }
+    .plan-card .check-row { display: flex; justify-content: space-between; align-items: center; padding: 0.35rem 0; }
+    .plan-card .check-row input { width: auto; }
+    .plan-btn { width: 100%; padding: 0.8rem 1rem; border: none; border-radius: 0.7rem; background: #4f46e5; color: #fff; font-weight: 700; cursor: pointer; }
+    .plan-btn:hover { background: #4338ca; }
+    .plan-required { color: #ef4444; }
+    @media (min-width: 992px) {
+        .plan-layout { grid-template-columns: 2fr 1fr; }
+    }
+</style>
 
-<form method="POST" action="{{ route('admin.plans.store') }}">
-    @csrf
-    
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Main Details -->
-        <div class="lg:col-span-2 space-y-6">
-            <div class="bg-white rounded-xl shadow-sm border p-6">
-                <h2 class="text-lg font-bold text-gray-800 mb-4">Plan Details</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Plan Name <span class="text-red-500">*</span></label>
-                        <input type="text" name="name" value="{{ old('name') }}" required 
-                               class="w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                        <textarea name="description" rows="2" class="w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none">{{ old('description') }}</textarea>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Monthly Price (₹) <span class="text-red-500">*</span></label>
-                        <input type="number" step="0.01" name="price" value="{{ old('price', 0) }}" required 
-                               class="w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Annual Price (₹)</label>
-                        <input type="number" step="0.01" name="annual_price" value="{{ old('annual_price') }}" 
-                               class="w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Billing Cycle</label>
-                        <select name="billing_cycle" class="w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <option value="monthly" {{ old('billing_cycle') == 'monthly' ? 'selected' : '' }}>Monthly</option>
-                            <option value="yearly" {{ old('billing_cycle') == 'yearly' ? 'selected' : '' }}>Yearly</option>
-                            <option value="one_time" {{ old('billing_cycle') == 'one_time' ? 'selected' : '' }}>One Time</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Trial Days</label>
-                        <input type="number" name="trial_days" value="{{ old('trial_days', 0) }}" 
-                               class="w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm border p-6">
-                <h2 class="text-lg font-bold text-gray-800 mb-4">Features</h2>
-                <p class="text-sm text-gray-500 mb-3">Enter one feature per line.</p>
-                <textarea name="features" rows="5" 
-                          class="w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-                          placeholder="Custom QR Codes&#10;Google Review Integration&#10;Analytics Dashboard">{{ old('features') }}</textarea>
-            </div>
-        </div>
-
-        <!-- Sidebar Settings -->
-        <div class="space-y-6">
-            <div class="bg-white rounded-xl shadow-sm border p-6">
-                <h2 class="text-lg font-bold text-gray-800 mb-4">Settings</h2>
-                <div class="space-y-4">
-                    <label class="flex items-center space-x-3 cursor-pointer">
-                        <input type="checkbox" name="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }} class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
-                        <span class="text-sm font-medium text-gray-700">Active</span>
-                    </label>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Sort Order</label>
-                        <input type="number" name="sort_order" value="{{ old('sort_order', 0) }}" 
-                               class="w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <p class="text-xs text-gray-400 mt-1">Lower number shows first</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm border p-6">
-                <h2 class="text-lg font-bold text-gray-800 mb-4">Limits & Addons</h2>
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">QR Codes (-1 for unlimited)</label>
-                        <input type="number" name="limits[qr_codes]" value="{{ old('limits.qr_codes', 0) }}" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Reviews / Month</label>
-                        <input type="number" name="limits[reviews_per_month]" value="{{ old('limits.reviews_per_month', 0) }}" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Branches</label>
-                        <input type="number" name="limits[branches]" value="{{ old('limits.branches', 0) }}" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Employees</label>
-                        <input type="number" name="limits[employees]" value="{{ old('limits.employees', 0) }}" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">AI Credits</label>
-                        <input type="number" name="limits[ai_credits]" value="{{ old('limits.ai_credits', 0) }}" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Analytics Days</label>
-                        <input type="number" name="limits[analytics_days]" value="{{ old('limits.analytics_days', 7) }}" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                    
-                    <div class="border-t pt-3 mt-3 space-y-3">
-                        <label class="flex items-center justify-between cursor-pointer">
-                            <span class="text-sm text-gray-700">WhatsApp</span>
-                            <input type="checkbox" name="limits.whatsapp" value="1" {{ old('limits.whatsapp') ? 'checked' : '' }} class="w-4 h-4 text-indigo-600 rounded">
-                        </label>
-                        <label class="flex items-center justify-between cursor-pointer">
-                            <span class="text-sm text-gray-700">SMS</span>
-                            <input type="checkbox" name="limits.sms" value="1" {{ old('limits.sms') ? 'checked' : '' }} class="w-4 h-4 text-indigo-600 rounded">
-                        </label>
-                        <label class="flex items-center justify-between cursor-pointer">
-                            <span class="text-sm text-gray-700">NFC Support</span>
-                            <input type="checkbox" name="limits.nfc" value="1" {{ old('limits.nfc') ? 'checked' : '' }} class="w-4 h-4 text-indigo-600 rounded">
-                        </label>
-                        <label class="flex items-center justify-between cursor-pointer">
-                            <span class="text-sm text-gray-700">White Label</span>
-                            <input type="checkbox" name="limits.white_label" value="1" {{ old('limits.white_label') ? 'checked' : '' }} class="w-4 h-4 text-indigo-600 rounded">
-                        </label>
-                        <label class="flex items-center justify-between cursor-pointer">
-                            <span class="text-sm text-gray-700">Custom Branding</span>
-                            <input type="checkbox" name="limits.custom_branding" value="1" {{ old('limits.custom_branding') ? 'checked' : '' }} class="w-4 h-4 text-indigo-600 rounded">
-                        </label>
-                        <label class="flex items-center justify-between cursor-pointer">
-                            <span class="text-sm text-gray-700">Remove Branding</span>
-                            <input type="checkbox" name="limits.remove_branding" value="1" {{ old('limits.remove_branding') ? 'checked' : '' }} class="w-4 h-4 text-indigo-600 rounded">
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <button type="submit" class="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition shadow-sm">
-                <i class="fas fa-save mr-2"></i>Create Plan
-            </button>
-        </div>
+<div class="plan-page">
+    <div class="plan-back">
+        <a href="{{ route('admin.plans.index') }}"><i class="fas fa-arrow-left"></i> Back to Plans</a>
     </div>
-</form>
+
+    <form class="plan-form" method="POST" action="{{ route('admin.plans.store') }}">
+        @csrf
+        <div class="plan-layout">
+            <div class="plan-main">
+                <div class="plan-card">
+                    <h2>Plan Details</h2>
+                    <div class="field-grid">
+                        <div class="field-col-2">
+                            <label>Plan Name <span class="plan-required">*</span></label>
+                            <input type="text" name="name" value="{{ old('name') }}" required>
+                        </div>
+                        <div class="field-col-2">
+                            <label>Description</label>
+                            <textarea name="description">{{ old('description') }}</textarea>
+                        </div>
+                        <div>
+                            <label>Monthly Price (₹) <span class="plan-required">*</span></label>
+                            <input type="number" step="0.01" name="price" value="{{ old('price', 0) }}" required>
+                        </div>
+                        <div>
+                            <label>Annual Price (₹)</label>
+                            <input type="number" step="0.01" name="annual_price" value="{{ old('annual_price') }}">
+                        </div>
+                        <div>
+                            <label>Billing Cycle</label>
+                            <select name="billing_cycle">
+                                <option value="monthly" {{ old('billing_cycle') == 'monthly' ? 'selected' : '' }}>Monthly</option>
+                                <option value="yearly" {{ old('billing_cycle') == 'yearly' ? 'selected' : '' }}>Yearly</option>
+                                <option value="one_time" {{ old('billing_cycle') == 'one_time' ? 'selected' : '' }}>One Time</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Trial Days</label>
+                            <input type="number" name="trial_days" value="{{ old('trial_days', 0) }}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="plan-card">
+                    <h2>Features</h2>
+                    <p class="hint">Enter one feature per line.</p>
+                    <textarea name="features" placeholder="Custom QR Codes&#10;Google Review Integration&#10;Analytics Dashboard">{{ old('features') }}</textarea>
+                </div>
+            </div>
+
+            <div class="plan-main">
+                <div class="plan-card">
+                    <h2>Settings</h2>
+                    <div class="check-row">
+                        <label>Active</label>
+                        <input type="checkbox" name="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }}>
+                    </div>
+                    <div style="margin-top:0.8rem;">
+                        <label>Sort Order</label>
+                        <input type="number" name="sort_order" value="{{ old('sort_order', 0) }}">
+                        <p class="hint">Lower number shows first</p>
+                    </div>
+                </div>
+
+                <div class="plan-card">
+                    <h2>Limits & Addons</h2>
+                    <div style="display:flex; flex-direction:column; gap:0.7rem;">
+                        <div>
+                            <label>QR Codes (-1 for unlimited)</label>
+                            <input type="number" name="limits[qr_codes]" value="{{ old('limits.qr_codes', 0) }}">
+                        </div>
+                        <div>
+                            <label>Reviews / Month</label>
+                            <input type="number" name="limits[reviews_per_month]" value="{{ old('limits.reviews_per_month', 0) }}">
+                        </div>
+                        <div>
+                            <label>Branches</label>
+                            <input type="number" name="limits[branches]" value="{{ old('limits.branches', 0) }}">
+                        </div>
+                        <div>
+                            <label>Employees</label>
+                            <input type="number" name="limits[employees]" value="{{ old('limits.employees', 0) }}">
+                        </div>
+                        <div>
+                            <label>AI Credits</label>
+                            <input type="number" name="limits[ai_credits]" value="{{ old('limits.ai_credits', 0) }}">
+                        </div>
+                        <div>
+                            <label>Analytics Days</label>
+                            <input type="number" name="limits[analytics_days]" value="{{ old('limits.analytics_days', 7) }}">
+                        </div>
+                        <div style="border-top:1px solid #e5e7eb; padding-top:0.8rem; display:flex; flex-direction:column; gap:0.45rem;">
+                            <div class="check-row"><span>WhatsApp</span><input type="checkbox" name="limits.whatsapp" value="1" {{ old('limits.whatsapp') ? 'checked' : '' }}></div>
+                            <div class="check-row"><span>SMS</span><input type="checkbox" name="limits.sms" value="1" {{ old('limits.sms') ? 'checked' : '' }}></div>
+                            <div class="check-row"><span>NFC Support</span><input type="checkbox" name="limits.nfc" value="1" {{ old('limits.nfc') ? 'checked' : '' }}></div>
+                            <div class="check-row"><span>White Label</span><input type="checkbox" name="limits.white_label" value="1" {{ old('limits.white_label') ? 'checked' : '' }}></div>
+                            <div class="check-row"><span>Custom Branding</span><input type="checkbox" name="limits.custom_branding" value="1" {{ old('limits.custom_branding') ? 'checked' : '' }}></div>
+                            <div class="check-row"><span>Remove Branding</span><input type="checkbox" name="limits.remove_branding" value="1" {{ old('limits.remove_branding') ? 'checked' : '' }}></div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="plan-btn"><i class="fas fa-save"></i> Create Plan</button>
+            </div>
+        </div>
+    </form>
+</div>
 @endsection
