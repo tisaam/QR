@@ -26,6 +26,107 @@
     .empty-state { text-align: center; padding: 2rem 1rem; color: #6b7280; border: 1px dashed #d1d5db; border-radius: 0.8rem; background: #fff; }
     @media (min-width: 768px) { .plan-grid { grid-template-columns: repeat(2,1fr); } }
     @media (min-width: 1200px) { .plan-grid { grid-template-columns: repeat(3,1fr); } }
+    /* ===========================================================
+   PLANS PAGE - DARK MODE ONLY
+   (Light mode remains EXACTLY the same)
+=========================================================== */
+
+body:not(.light-mode) .plan-page{
+    color: var(--child-text);
+}
+
+/* Header */
+
+body:not(.light-mode) .plan-header h1{
+    color: var(--child-text);
+}
+
+/* Create Button */
+
+body:not(.light-mode) .plan-btn{
+    background:#4f46e5;
+    color:#fff;
+}
+
+body:not(.light-mode) .plan-btn:hover{
+    background:#4338ca;
+}
+
+/* Plan Card */
+
+body:not(.light-mode) .plan-card{
+    background: var(--child-bg);
+    border-color: var(--child-border);
+    box-shadow:0 10px 25px rgba(0,0,0,.35);
+}
+
+body:not(.light-mode) .plan-card h3{
+    color: var(--child-text);
+}
+
+/* Price */
+
+body:not(.light-mode) .plan-price{
+    color: var(--child-text);
+}
+
+body:not(.light-mode) .plan-price small{
+    color: var(--child-text-sec);
+}
+
+/* Section */
+
+body:not(.light-mode) .plan-section{
+    border-top-color: var(--child-border);
+}
+
+/* List */
+
+body:not(.light-mode) .plan-list{
+    color: var(--child-text-sec);
+}
+
+/* Status */
+
+body:not(.light-mode) .plan-pill.inactive{
+    background: rgba(255,255,255,.06);
+    color:#cbd5e1;
+}
+
+/* Keep Active badge green */
+
+body:not(.light-mode) .plan-pill.active{
+    background: rgba(22,101,52,.20);
+    color:#86efac;
+}
+
+/* Action Buttons */
+
+body:not(.light-mode) .plan-link.edit{
+    background: rgba(79,70,229,.15);
+    color:#a5b4fc;
+}
+
+body:not(.light-mode) .plan-link.edit:hover{
+    background: rgba(79,70,229,.25);
+}
+
+body:not(.light-mode) .plan-link.delete{
+    background: rgba(185,28,28,.15);
+    color:#fca5a5;
+}
+
+body:not(.light-mode) .plan-link.delete:hover{
+    background: rgba(185,28,28,.25);
+}
+
+/* Empty */
+
+body:not(.light-mode) .empty-state{
+    background: var(--child-bg);
+    color: var(--child-text-sec);
+    border-color: var(--child-border);
+}
 </style>
 
 <div class="plan-page">

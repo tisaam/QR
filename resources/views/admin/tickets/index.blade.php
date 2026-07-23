@@ -42,6 +42,188 @@
     .pagination-wrap p { margin: 0; color: #6b7280; font-size: 0.95rem; }
     @media (max-width: 768px) { .tickets-topbar { flex-direction: column; align-items: flex-start; } .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (max-width: 576px) { .stats-grid { grid-template-columns: 1fr; } }
+/* ===========================================================
+   TICKETS PAGE - DARK MODE ONLY
+   (Light mode remains EXACTLY the same)
+=========================================================== */
+
+body:not(.light-mode) .tickets-page{
+    color: var(--child-text);
+}
+
+/* Header */
+
+body:not(.light-mode) .tickets-title{
+    color: var(--child-text);
+}
+
+/* Filters */
+
+body:not(.light-mode) .tickets-filters select{
+    background: var(--child-bg);
+    color: var(--child-text);
+    border: 1px solid var(--child-border);
+}
+
+body:not(.light-mode) .tickets-filters select:focus{
+    outline: none;
+    border-color: var(--accent-glow);
+    box-shadow: 0 0 0 3px var(--accent-glow-soft);
+}
+
+body:not(.light-mode) .tickets-filters select option{
+    background: #111827;
+    color: #f8fafc;
+}
+
+/* Statistics */
+
+body:not(.light-mode) .stat-card{
+    border: 1px solid var(--child-border);
+    box-shadow: 0 8px 20px rgba(0,0,0,.25);
+}
+
+body:not(.light-mode) .stat-card.open{
+    background: rgba(239,68,68,.12);
+    border-color: rgba(239,68,68,.25);
+}
+
+body:not(.light-mode) .stat-card.progress{
+    background: rgba(59,130,246,.12);
+    border-color: rgba(59,130,246,.25);
+}
+
+body:not(.light-mode) .stat-card.resolved{
+    background: rgba(16,185,129,.12);
+    border-color: rgba(16,185,129,.25);
+}
+
+body:not(.light-mode) .stat-card.closed{
+    background: rgba(255,255,255,.03);
+    border-color: var(--child-border);
+}
+
+body:not(.light-mode) .stat-value{
+    color: var(--child-text);
+}
+
+body:not(.light-mode) .stat-label{
+    color: var(--child-text-sec);
+}
+
+/* Table */
+
+body:not(.light-mode) .table-card{
+    background: var(--child-bg);
+    border: 1px solid var(--child-border);
+    box-shadow: 0 10px 25px rgba(0,0,0,.35);
+}
+
+body:not(.light-mode) .table-card table{
+    color: var(--child-text);
+}
+
+body:not(.light-mode) .table-card thead{
+    background: rgba(255,255,255,.04);
+    color: var(--child-text-sec);
+}
+
+body:not(.light-mode) .table-card th,
+body:not(.light-mode) .table-card td{
+    border-bottom: 1px solid var(--child-border);
+}
+
+body:not(.light-mode) .table-card tbody tr:hover{
+    background: rgba(255,255,255,.03);
+}
+
+/* Ticket */
+
+body:not(.light-mode) .ticket-subject{
+    color: var(--child-text);
+}
+
+body:not(.light-mode) .ticket-preview{
+    color: var(--child-text-sec);
+}
+
+/* Avatar */
+
+body:not(.light-mode) .avatar{
+    background: rgba(99,102,241,.15);
+    color: #a5b4fc;
+}
+
+/* Priority Badges */
+
+body:not(.light-mode) .badge-low{
+    background: rgba(148,163,184,.12);
+    color: #cbd5e1;
+}
+
+body:not(.light-mode) .badge-medium{
+    background: rgba(59,130,246,.15);
+    color: #60a5fa;
+}
+
+body:not(.light-mode) .badge-high{
+    background: rgba(245,158,11,.15);
+    color: #fbbf24;
+}
+
+body:not(.light-mode) .badge-urgent{
+    background: rgba(239,68,68,.15);
+    color: #f87171;
+}
+
+/* Status Badges */
+
+body:not(.light-mode) .badge-open{
+    background: rgba(239,68,68,.15);
+    color: #f87171;
+}
+
+body:not(.light-mode) .badge-progress{
+    background: rgba(59,130,246,.15);
+    color: #60a5fa;
+}
+
+body:not(.light-mode) .badge-resolved{
+    background: rgba(16,185,129,.15);
+    color: #34d399;
+}
+
+body:not(.light-mode) .badge-closed{
+    background: rgba(148,163,184,.12);
+    color: #cbd5e1;
+}
+
+/* Links */
+
+body:not(.light-mode) .view-link{
+    color: #818cf8;
+}
+
+body:not(.light-mode) .view-link:hover{
+    color: #a5b4fc;
+}
+
+/* Empty */
+
+body:not(.light-mode) .empty-state{
+    color: var(--child-text-sec);
+}
+
+/* Pagination */
+
+body:not(.light-mode) .pagination-wrap{
+    background: rgba(255,255,255,.03);
+    border-top: 1px solid var(--child-border);
+}
+
+body:not(.light-mode) .pagination-wrap p{
+    color: var(--child-text-sec);
+}
 </style>
 
 <div class="tickets-page">

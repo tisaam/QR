@@ -1,38 +1,217 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - {{ config('app.name') }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Login</title>
+
+
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-    <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
-        <div class="text-center mb-6">
-            <i class="fas fa-qrcode text-blue-600 text-4xl"></i>
-            <h2 class="text-2xl font-bold mt-2">Welcome Back</h2>
-        </div>
-        
-        @if(session('error'))
-            <div class="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm">{{ session('error') }}</div>
-        @endif
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: Arial, Helvetica, sans-serif;
+    }
 
-        <form method="POST" action="{{ route('login') }}">
-            @csrf
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input type="email" name="email" value="{{ old('email') }}" required class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500">
-            </div>
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <input type="password" name="password" required class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500">
-            </div>
-            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700">Login</button>
-        </form>
+    body {
+        background: #f7f3f3;
+    }
 
-        <div class="mt-4 text-center text-sm text-gray-500">
-            Don't have an account? <a href="{{ route('register') }}" class="text-blue-600 font-medium">Register</a>
+    .wrapper {
+
+        width: 100%;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+
+    }
+
+    .register-box {
+
+        width: 550px;
+        background: #fff;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, .15);
+
+    }
+
+    .top {
+
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-bottom: 4px solid #1b8ed9;
+        padding: 30px 18px;
+    }
+
+    .content {
+        padding: 25px;
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 10px;
+        color: #666;
+    }
+
+    input[type=text],
+    input[type=email],
+    input[type=password] {
+        width: 100%;
+        height: 36px;
+        border: 1px solid #d5d5d5;
+        border-radius: 3px;
+        padding: 10px;
+        outline: none;
+    }
+
+    input:focus {
+        border: 1px solid #1b8ed9;
+    }
+
+    .col {
+        width: 100%;
+    }
+
+    .terms {
+        margin-top: 25px;
+        display: flex;
+        align-items: center;
+    }
+
+    .terms input {
+        width: 18px;
+        height: 18px;
+        margin-right: 10px;
+    }
+
+    .terms a {
+
+        color: #1b8ed9;
+        text-decoration: none;
+    }
+
+    .button-area {
+        text-align: right;
+        margin-top: 25px;
+    }
+
+    .signup-btn {
+
+        background: #1b8ed9;
+        color: #fff;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 18px;
+        margin-right: 190px;
+    }
+
+    .signup-btn:hover {
+        background: #1279bc;
+    }
+
+    .error {
+        color: red;
+        font-size: 13px;
+        margin-top: 5px;
+        display: block;
+    }
+
+    .copyright {
+        margin-top: 20px;
+        color: #999;
+        font-size: 15px;
+    }
+</style>
+
+<body>
+
+    <div class="wrapper">
+
+        <div class="register-box">
+
+            <div class="top">
+                <b>
+                    <p>Welcome Back !!</p>
+                </b>
+            </div>
+
+            <div class="content">
+
+                @if(session('error'))
+                    <div class="error-box">
+                        {{ session('error') }}
+                    </div>
+                @endif
+
+                <form method="POST" action="{{ route('login') }}">
+                    @csrf
+
+                    <div class="form-group">
+
+                        <label>E-mail Address</label>
+
+                        <input type="email" name="email" value="{{ old('email') }}" required autofocus>
+
+                        @error('email')
+                            <span class="error">{{ $message }}</span>
+                        @enderror
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>Password</label>
+
+                        <input type="password" name="password" required>
+
+                        @error('password')
+                            <span class="error">{{ $message }}</span>
+                        @enderror
+
+                    </div>
+
+                    <div class="terms">
+
+                      
+                        @if (Route::has('password.request'))
+                            <a href="{{ route('password.request') }}">
+                                Forgot Password?
+                            </a>
+                        @endif
+
+                    </div>
+
+                    <div class="button-area">
+
+                        <button type="submit" class="signup-btn">
+                            Login
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
         </div>
+
+        <div class="copyright">
+            © Copyright {{ date('Y') }}. All Rights Reserved.
+        </div>
+
     </div>
+
 </body>
+
 </html>

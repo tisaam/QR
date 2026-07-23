@@ -13,15 +13,14 @@ use Illuminate\Support\Facades\Log;
 class AIService
 {
     private $apiKey;
-    private $apiUrl;
     private $model;
 
     public function __construct()
     {
-        // Supports both OpenAI and Gemini (configured in .env)
-        $this->apiKey = config('services.openai.api_key');
-        $this->apiUrl = config('services.openai.api_url', 'https://api.openai.com/v1/chat/completions');
-        $this->model = config('services.openai.model', 'gpt-3.5-turbo');
+        // ✅ FREE Google Gemini API Key
+        $this->apiKey = env('GEMINI_API_KEY');
+        // Gemini 2.0 Flash (Fastest & Free)
+        $this->model  = 'gemini-2.0-flash';
     }
 
     public function generateReviewSuggestions(Business $business, int $rating, string $language = 'en'): array
@@ -62,18 +61,31 @@ class AIService
     private function callAI(string $prompt): string
     {
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
-                'Content-Type' => 'application/json',
-            ])->post($this->apiUrl, [
-                'model' => $this->model,
-                'messages' => [['role' => 'user', 'content' => $prompt]],
-                'temperature' => 0.7,
-            ])->throw();
+            // ✅ Google Gemini API Format
+            $response = Http::post(
+                "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->apiKey}",
+                [
+                    'contents' => [
+                        ['parts' => [['text' => $prompt]]]
+                    ],
+                    'generationConfig' => [
+                        'temperature'     => 0.7,
+                        'maxOutputTokens' => 500,
+                        'responseMimeType' => "application/json"
+                    ]
+                ]
+            );
 
-            return $response->json('choices.0.message.content');
+            if ($response->failed()) {
+                throw new \Exception('Gemini API Error: ' . $response->body());
+            }
+
+            // ✅ Gemini Response Format
+            return $response->json('candidates.0.content.parts.0.text', '');
+
         } catch (\Exception $e) {
             Log::error('AI Error: ' . $e->getMessage());
+            // Fallback agar API fail ho jaye
             return json_encode([['text' => 'Great experience!'], ['text' => 'Excellent service!'], ['text' => 'Highly recommended!']]);
         }
     }

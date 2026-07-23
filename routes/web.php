@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\GoogleLoginController;
 use App\Http\Controllers\Business\BusinessDashboardController;
 use App\Http\Controllers\Business\BusinessProfileController;
 use App\Http\Controllers\Business\BranchController;
+use App\Http\Controllers\Business\BusinessApprovalController; // Already hai
 use App\Http\Controllers\QR\QRCodeController;
 use App\Http\Controllers\QR\QRScanController;
 use App\Http\Controllers\Review\ReviewController;
@@ -41,6 +42,7 @@ use App\Http\Controllers\Admin\AdminReportController;
 use App\Http\Controllers\Admin\AdminTicketController;
 use App\Http\Controllers\Admin\AdminSettingController;
 use App\Http\Controllers\Admin\AdminActivityLogController;
+use App\Http\Controllers\QR\ReviewLandingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -48,7 +50,7 @@ use App\Http\Controllers\Admin\AdminActivityLogController;
 |--------------------------------------------------------------------------
 */
 Route::get('/', function () {
-    return view('landing.review-page'); // Optional: Create a marketing homepage
+    return view('landing.review-page');
 })->name('home');
 
 Route::get('/pricing', [PlanController::class, 'index'])->name('public.pricing');
@@ -84,6 +86,11 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 | AUTHENTICATED BUSINESS ROUTES
 |--------------------------------------------------------------------------
 */
+
+ Route::post('ai/generate', [AIReviewController::class, 'generate'])->name('ai.generate')->middleware('aicredits');
+    Route::resource('ai-templates', AIReviewTemplateController::class)->only(['index', 'store', 'update']);
+    Route::post('ai-templates/{template}/set-default', [AIReviewTemplateController::class, 'setDefault'])->name('ai-templates.setDefault');
+
 Route::middleware(['auth'])->group(function () {
 
     // --- Onboarding ---
@@ -107,6 +114,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('qr-codes/bulk-generate', [QRCodeController::class, 'bulkGenerate'])->name('qr-codes.bulk-generate')->middleware('qr.limit');
     Route::get('qr-codes/{qrCode}/download/{format}', [QRCodeController::class, 'download'])->name('qr-codes.download');
     
+    // ✅ YAHAN ADD KIYA — Auth group ke andar
+    Route::post('/request-qr-approval', [BusinessApprovalController::class, 'requestApproval'])->name('qr-approval.request');
+
     // --- QR Scans Log ---
     Route::get('qr-scans', [QRScanController::class, 'index'])->name('qr-scans.index');
 
@@ -114,12 +124,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('reviews', [ReviewController::class, 'index'])->name('reviews.index');
     Route::get('reviews/{review}', [ReviewController::class, 'show'])->name('reviews.show');
     Route::get('reviews/export', [ReviewController::class, 'export'])->name('reviews.export');
+    Route::get('/review/{slug}', [ReviewLandingController::class, 'show'])->name('review.landing');
+    Route::post('/review/{slug}/feedback', [ReviewLandingController::class, 'storeFeedback'])->name('review.feedback');
 
     // --- AI Reviews ---
-    Route::post('ai/generate', [AIReviewController::class, 'generate'])->name('ai.generate')->middleware('aicredits');
-    Route::resource('ai-templates', AIReviewTemplateController::class)->only(['index', 'store', 'update']);
-    Route::post('ai-templates/{template}/set-default', [AIReviewTemplateController::class, 'setDefault'])->name('ai-templates.setDefault');
-
+   
     // --- Analytics ---
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
     Route::get('analytics/stats', [AnalyticsController::class, 'getDashboardStats'])->name('api.stats');
@@ -135,7 +144,7 @@ Route::middleware(['auth'])->group(function () {
     
     Route::get('payment/process', [PaymentController::class, 'process'])->name('payment.process');
     Route::post('payment/success', [PaymentController::class, 'success'])->name('payment.success');
-    Route::post('razorpay/webhook', [PaymentController::class, 'webhook'])->name('razorpay.webhook')->withoutMiddleware(['auth']); // Webhooks are external
+    Route::post('razorpay/webhook', [PaymentController::class, 'webhook'])->name('razorpay.webhook')->withoutMiddleware(['auth']);
 
     // --- Coupons ---
     Route::post('coupon/validate', [CouponController::class, 'validate'])->name('coupon.validate');
@@ -191,15 +200,21 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-    // Businesses
-    Route::resource('businesses', AdminBusinessController::class)->only(['index', 'show']);
-    Route::post('businesses/{business}/approve', [AdminBusinessController::class, 'approve'])->name('businesses.approve');
-    Route::post('businesses/{business}/reject', [AdminBusinessController::class, 'reject'])->name('businesses.reject');
-    Route::post('businesses/{business}/suspend', [AdminBusinessController::class, 'suspend'])->name('businesses.suspend');
-
     // Users
     Route::resource('users', AdminUserController::class)->only(['index', 'destroy']);
     Route::post('users/{user}/toggle-status', [AdminUserController::class, 'toggleStatus'])->name('users.toggle-status');
+
+    // Businesses
+    Route::get('businesses', [AdminBusinessController::class, 'index'])->name('businesses.index');
+    Route::get('businesses/{business}', [AdminBusinessController::class, 'show'])->name('businesses.show');
+    Route::post('businesses/{business}/approve', [AdminBusinessController::class, 'approve'])->name('businesses.approve');
+    Route::post('businesses/{business}/reject', [AdminBusinessController::class, 'reject'])->name('businesses.reject');
+    Route::put('businesses/{business}', [AdminBusinessController::class, 'update'])->name('businesses.update');
+    Route::post('businesses/{business}/warn', [AdminBusinessController::class, 'warn'])->name('businesses.warn');
+    Route::post('businesses/{business}/block', [AdminBusinessController::class, 'block'])->name('businesses.block');
+    Route::post('businesses/{business}/unblock', [AdminBusinessController::class, 'unblock'])->name('businesses.unblock');
+    Route::post('businesses/{business}/suspend', [AdminBusinessController::class, 'suspend'])->name('businesses.suspend');
+    Route::post('businesses/{business}/approve-request', [AdminBusinessController::class, 'approveRequest'])->name('businesses.approve-request');
 
     // Plans & Subscriptions
     Route::resource('plans', AdminPlanController::class);
@@ -235,7 +250,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
 
     // Settings & Logs
     Route::get('settings', [AdminSettingController::class, 'index'])->name('settings.index');
-    Route::post('settings', [AdminSettingController::class, 'update'])->name('settings.update');
+    Route::put('settings', [AdminSettingController::class, 'update'])->name('settings.update');
     Route::get('activity-logs', [AdminActivityLogController::class, 'index'])->name('activity-logs.index');
     Route::get('activity-logs/{log}', [AdminActivityLogController::class, 'show'])->name('activity-logs.show');
 });

@@ -13,7 +13,9 @@ class QRCodeService
     public function generate(Business $business, array $data): QRCode
     {
         $slug = $this->generateUniqueSlug($data['name']);
-        $landingUrl = url('/r/' . $slug);
+        
+        // Jo URL user ne form me dala hai (Google Review Link) wahi save hoga
+        $destinationUrl = $data['destination_url'] ?? '#';
         
         $qrCode = QRCode::create([
             'business_id' => $business->id,
@@ -23,11 +25,13 @@ class QRCodeService
             'slug' => $slug,
             'type' => $data['type'] ?? 'custom',
             'identifier' => $data['identifier'] ?? null,
-            'landing_page_url' => $landingUrl,
+            'landing_page_url' => $destinationUrl, // ✅ Fix: Direct destination URL save hoga
             'is_active' => true,
         ]);
         
-        $this->generateQRImages($qrCode, $landingUrl);
+        // QR Image usi destination URL se banegi
+        $this->generateQRImages($qrCode, $destinationUrl);
+        
         return $qrCode->load('business');
     }
 
@@ -35,6 +39,7 @@ class QRCodeService
     {
         $qrCodes = [];
         $prefix = $data['prefix'] ?? 'QR';
+        
         for ($i = $data['start_number']; $i <= $data['end_number']; $i++) {
             $identifier = $prefix . ' ' . $i;
             $qrCodes[] = $this->generate($business, [
@@ -42,19 +47,19 @@ class QRCodeService
                 'type' => $data['type'] ?? 'custom',
                 'identifier' => $identifier,
                 'branch_id' => $data['branch_id'] ?? null,
+                'destination_url' => $data['destination_url'] ?? null,
             ]);
         }
         return $qrCodes;
     }
-         public function generateQRImages(QRCode $qrCode, string $url)
+
+    public function generateQRImages(QRCode $qrCode, string $url)
     {
         if (!extension_loaded('gd')) {
             throw new \Exception('PHP GD extension is missing. You cannot generate JPG files without it.');
         }
 
         $jpgPath = 'qr/' . $qrCode->slug . '.jpg';
-        
-        // Get the absolute real path on your hard drive (e.g., C:\xampp\htdocs\project\storage\app\public\qr\...)
         $absolutePath = Storage::disk('public')->path($jpgPath);
 
         // Make sure the folder exists
@@ -72,11 +77,9 @@ class QRCodeService
         $img = @imagecreatefromstring($pngString);
         
         if (!$img) {
-            // If GD fails to read it, just save the raw PNG data with a .jpg extension 
-            // (Most image viewers will still open it correctly based on its internal data)
             file_put_contents($absolutePath, $pngString);
         } else {
-            // 3. Create a white background (JPGs don't support transparency)
+            // 3. Create a white background
             $w = imagesx($img);
             $h = imagesy($img);
             $whiteBg = imagecreatetruecolor($w, $h);
@@ -86,7 +89,7 @@ class QRCodeService
             // 4. Merge the QR code onto the white background
             imagecopy($whiteBg, $img, 0, 0, 0, 0, $w, $h);
 
-            // 5. Write the JPG DIRECTLY to the hard drive (bypassing Laravel Storage)
+            // 5. Write the JPG DIRECTLY to the hard drive
             imagejpeg($whiteBg, $absolutePath, 90);
 
             // 6. Free up memory
@@ -100,8 +103,8 @@ class QRCodeService
             'qr_image_path' => $jpgPath  
         ]); 
     }     
-   
-            public function download(QRCode $qrCode, string $format = 'jpg')
+
+    public function download(QRCode $qrCode, string $format = 'jpg')
     {
         $path = $qrCode->qr_image_path;
 
@@ -110,18 +113,17 @@ class QRCodeService
         }
 
         $fullPath = Storage::disk('public')->path($path);
-        $fileName = $qrCode->slug . '.jpg';
+        $fileName = $qrCode->slug . '.png';
 
-        // THIS IS THE FIX: Clear any invisible spaces/newlines that break image downloads
+        // Clear any invisible spaces/newlines that break image downloads
         if (ob_get_level()) {
             ob_end_clean();
         }
 
-        // Use streamDownload to safely send the pure binary image data
         return response()->streamDownload(function () use ($fullPath) {
             readfile($fullPath);
         }, $fileName, [
-            'Content-Type' => 'image/jpeg',
+            'Content-Type' => 'image/png',
             'Content-Length' => filesize($fullPath),
         ]);
     }
@@ -133,32 +135,5 @@ class QRCodeService
             $slug = Str::slug($name) . '-' . Str::random(6);
         }
         return $slug;
-    }
-
-    private function detectDevice(): string
-    {
-        $ua = request()->userAgent();
-        if (preg_match('/Mobile/i', $ua)) return 'mobile';
-        if (preg_match('/Tablet/i', $ua)) return 'tablet';
-        return 'desktop';
-    }
-
-    private function detectBrowser(): string
-    {
-        $ua = request()->userAgent();
-        if (preg_match('/Chrome/i', $ua)) return 'Chrome';
-        if (preg_match('/Firefox/i', $ua)) return 'Firefox';
-        if (preg_match('/Safari/i', $ua)) return 'Safari';
-        return 'Other';
-    }
-
-    private function detectOS(): string
-    {
-        $ua = request()->userAgent();
-        if (preg_match('/Android/i', $ua)) return 'Android';
-        if (preg_match('/iPhone|iPad/i', $ua)) return 'iOS';
-        if (preg_match('/Windows/i', $ua)) return 'Windows';
-        if (preg_match('/Mac/i', $ua)) return 'macOS';
-        return 'Other';
     }
 }

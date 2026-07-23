@@ -158,4 +158,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(EmployeePerformance::class, 'employee_id');
     }
+
+    public function aiCreditLogs()
+{
+    return $this->hasMany(AiCreditLog::class);
+}
 }

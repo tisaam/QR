@@ -22,6 +22,72 @@
     .settings-submit { padding: 0.8rem 1.2rem; border: none; border-radius: 0.7rem; background: #4f46e5; color: #fff; font-weight: 700; cursor: pointer; }
     .settings-submit:hover { background: #4338ca; }
     @media (min-width: 768px) { .settings-grid { grid-template-columns: repeat(2, 1fr); } }
+/* ===========================
+   DARK MODE
+=========================== */
+
+/* ===========================
+   DARK MODE
+   =========================== */
+
+body:not(.light-mode) .settings-page{
+    color:#e5e7eb !important;
+}
+
+body:not(.light-mode) .settings-title{
+    color:#ffffff !important;
+}
+
+body:not(.light-mode) .settings-card{
+    background:#1e293b !important;
+    border:1px solid #334155 !important;
+    box-shadow:none !important;
+}
+
+body:not(.light-mode) .settings-card h2{
+    color:#ffffff !important;
+}
+
+body:not(.light-mode) .settings-card label{
+    color:#cbd5e1 !important;
+}
+
+body:not(.light-mode) .settings-card input,
+body:not(.light-mode) .settings-card select,
+body:not(.light-mode) .settings-card textarea{
+    background:#0f172a !important;
+    border:1px solid #334155 !important;
+    color:#f8fafc !important;
+}
+
+body:not(.light-mode) .settings-card input::placeholder,
+body:not(.light-mode) .settings-card textarea::placeholder{
+    color:#94a3b8 !important;
+}
+
+body:not(.light-mode) .settings-card input:focus,
+body:not(.light-mode) .settings-card select:focus,
+body:not(.light-mode) .settings-card textarea:focus{
+    border-color:#6366f1 !important;
+    box-shadow:0 0 0 3px rgba(99,102,241,.25) !important;
+    outline:none;
+}
+
+body:not(.light-mode) .settings-submit{
+    background:#6366f1 !important;
+    color:#ffffff !important;
+}
+
+body:not(.light-mode) .settings-submit:hover{
+    background:#4f46e5 !important;
+}
+
+body:not(.light-mode) .settings-card .thumb{
+    background:#0f172a !important;
+    border:1px solid #334155 !important;
+    border-radius:8px;
+    padding:4px;
+}
 </style>
 
 <div class="settings-page">
@@ -65,20 +131,21 @@
             <div class="settings-card">
                 <h2><i class="fas fa-image" style="color:#4f46e5;"></i> Branding</h2>
                 <div class="settings-grid">
-                    <div>
-                        <label>Site Logo</label>
-                        <input type="file" name="site_logo" accept="image/*">
-                        @if($settings['site_logo'] ?? null)
-                            <img src="{{ Storage::url($settings['site_logo']) }}" alt="Logo" class="thumb">
-                        @endif
-                    </div>
-                    <div>
-                        <label>Favicon</label>
-                        <input type="file" name="favicon" accept="image/*">
-                        @if($settings['favicon'] ?? null)
-                            <img src="{{ Storage::url($settings['favicon']) }}" alt="Favicon" class="thumb">
-                        @endif
-                    </div>
+                     <div>
+                            <label>Site Logo</label>
+                            <input type="file" name="site_logo" accept="image/*">
+                            @if ($settings['site_logo'] ?? null)
+                                <img src="{{ asset($settings['site_logo']) }}" alt="Logo" class="thumb">
+                            @endif
+                        </div>
+                        <div>
+                            <label>Favicon</label>
+                            <input type="file" name="favicon" accept="image/*">
+                            @if ($settings['favicon'] ?? null)
+                                <img src="{{ asset($settings['favicon']) }}" alt="Favicon" class="thumb">
+                            @endif
+                        </div>
+ 
                 </div>
             </div>
 

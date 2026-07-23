@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
+use App\Models\Notification; // <-- Added
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -34,13 +35,11 @@ class AdminPlanController extends Controller
             'features' => 'nullable|string',
         ]);
 
-        // Process features from newline-separated string to array
         $features = null;
         if ($request->filled('features')) {
             $features = array_filter(array_map('trim', explode("\n", $request->features)));
         }
 
-        // Process limits
         $limits = [
             'qr_codes' => $request->limits['qr_codes'] ?? 0,
             'reviews_per_month' => $request->limits['reviews_per_month'] ?? 0,
@@ -84,8 +83,9 @@ class AdminPlanController extends Controller
         return view('admin.plans.edit', compact('plan'));
     }
 
-    public function update(Request $request, Plan $plan)
-    {
+       public function update(Request $request, Plan $plan)
+    {  
+       
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -132,12 +132,32 @@ class AdminPlanController extends Controller
             'sort_order' => $request->sort_order ?? 0,
         ]);
 
+        /* 
+        ====================================================================
+        GLOBAL PLAN UPDATE NOTIFICATION
+        ====================================================================
+        */
+        // Is plan par jis-jis business ki ACTIVE subscription hai, un sabko notification bhej do
+        $activeSubscriptions = \App\Models\Subscription::where('plan_id', $plan->id)->where('status', 'active')->get();
+        
+        foreach($activeSubscriptions as $sub) {
+            \App\Models\Notification::create([
+                'user_id' => $sub->user_id,
+                'type'    => 'system',
+                'title'   => 'Plan Details Updated ⚙️',
+                'message' => 'The details or limits for the "' . $plan->name . '" plan have been updated by an admin. Please review the new features.',
+                'data'    => [
+                    'action_url'  => route('subscription.current'),
+                    'action_text' => 'View Changes'
+                ]
+            ]);
+        }
+
         return redirect()->route('admin.plans.index')->with('success', 'Plan updated successfully.');
     }
 
     public function destroy(Plan $plan)
     {
-        // Prevent deleting if it has active subscriptions
         if ($plan->subscriptions()->where('status', 'active')->exists()) {
             return back()->with('error', 'Cannot delete plan with active subscriptions.');
         }

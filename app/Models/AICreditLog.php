@@ -5,7 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 class AICreditLog extends Model
-{
+{  
+    protected $table = 'ai_credit_logs';
     protected $fillable = [
         'ai_credit_id', 'user_id', 'type', 'amount', 'reason', 'review_id'
     ];

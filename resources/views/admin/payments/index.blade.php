@@ -37,6 +37,150 @@
     .pagination-wrap { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.1rem; background: #f9fafb; border-top: 1px solid #e5e7eb; }
     .pagination-wrap p { margin: 0; color: #6b7280; font-size: 0.95rem; }
     @media (max-width: 768px) { .payments-topbar { flex-direction: column; align-items: flex-start; } .summary-grid { grid-template-columns: 1fr; } .payments-controls input { width: 100%; } }
+/* ===========================================================
+   PAYMENTS PAGE - DARK MODE ONLY
+   (Light mode remains EXACTLY the same)
+=========================================================== */
+
+body:not(.light-mode) .payments-page{
+    color: var(--child-text);
+}
+
+/* Header */
+
+body:not(.light-mode) .payments-title{
+    color: var(--child-text);
+}
+
+/* Controls */
+
+body:not(.light-mode) .payments-controls select,
+body:not(.light-mode) .payments-controls input{
+    background: var(--child-bg);
+    color: var(--child-text);
+    border: 1px solid var(--child-border);
+}
+
+body:not(.light-mode) .payments-controls input::placeholder{
+    color: var(--child-text-sec);
+}
+
+body:not(.light-mode) .payments-controls select:focus,
+body:not(.light-mode) .payments-controls input:focus{
+    outline: none;
+    border-color: var(--accent-glow);
+    box-shadow: 0 0 0 3px var(--accent-glow-soft);
+}
+
+body:not(.light-mode) .payments-controls .search-wrap i{
+    color: var(--child-text-sec);
+}
+
+/* Summary Cards */
+
+body:not(.light-mode) .summary-card{
+    border: 1px solid var(--child-border);
+}
+
+body:not(.light-mode) .summary-card.success{
+    background: rgba(16,185,129,.12);
+    border-color: rgba(16,185,129,.25);
+}
+
+body:not(.light-mode) .summary-card.pending{
+    background: rgba(245,158,11,.12);
+    border-color: rgba(245,158,11,.25);
+}
+
+body:not(.light-mode) .summary-card.failed{
+    background: rgba(239,68,68,.12);
+    border-color: rgba(239,68,68,.25);
+}
+
+body:not(.light-mode) .summary-label{
+    color: var(--child-text-sec);
+}
+
+body:not(.light-mode) .summary-value{
+    color: var(--child-text);
+}
+
+/* Table */
+
+body:not(.light-mode) .payments-table-card{
+    background: var(--child-bg);
+    border: 1px solid var(--child-border);
+    box-shadow: 0 10px 25px rgba(0,0,0,.35);
+}
+
+body:not(.light-mode) .payments-table-card table{
+    color: var(--child-text);
+}
+
+body:not(.light-mode) .payments-table-card thead{
+    background: rgba(255,255,255,.04);
+    color: var(--child-text-sec);
+}
+
+body:not(.light-mode) .payments-table-card th,
+body:not(.light-mode) .payments-table-card td{
+    border-bottom: 1px solid var(--child-border);
+}
+
+body:not(.light-mode) .payments-table-card tbody tr:hover{
+    background: rgba(255,255,255,.03);
+}
+
+/* Avatar */
+
+body:not(.light-mode) .avatar{
+    background: rgba(99,102,241,.15);
+    color: #a5b4fc;
+}
+
+/* Status Pills */
+
+body:not(.light-mode) .status-success{
+    background: rgba(16,185,129,.15);
+    color: #34d399;
+}
+
+body:not(.light-mode) .status-pending{
+    background: rgba(245,158,11,.15);
+    color: #fbbf24;
+}
+
+body:not(.light-mode) .status-failed{
+    background: rgba(239,68,68,.15);
+    color: #f87171;
+}
+
+/* Links */
+
+body:not(.light-mode) .view-link{
+    color: #818cf8;
+}
+
+body:not(.light-mode) .view-link:hover{
+    color: #a5b4fc;
+}
+
+/* Empty State */
+
+body:not(.light-mode) .empty-state{
+    color: var(--child-text-sec);
+}
+
+/* Pagination */
+
+body:not(.light-mode) .pagination-wrap{
+    background: rgba(255,255,255,.03);
+    border-top: 1px solid var(--child-border);
+}
+
+body:not(.light-mode) .pagination-wrap p{
+    color: var(--child-text-sec);
+}
 </style>
 
 <div class="payments-page">

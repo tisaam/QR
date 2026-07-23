@@ -13,6 +13,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         // <--- ADD YOUR ALIASES RIGHT HERE --->
+         $middleware->validateCsrfTokens(except: [
+        'r/*/submit-review'
+    ]);
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'subscription' => \App\Http\Middleware\CheckSubscription::class,

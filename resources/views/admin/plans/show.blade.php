@@ -33,6 +33,129 @@
     .danger-card { border: 1px solid #fecaca; }
     .danger-btn { width: 100%; padding: 0.75rem 0.9rem; border: 1px solid #fecaca; background: #fef2f2; color: #b91c1c; border-radius: 0.65rem; font-weight: 700; cursor: pointer; }
     @media (min-width: 992px) { .plan-layout { grid-template-columns: 2fr 1fr; } .plan-feature-grid { grid-template-columns: repeat(2, 1fr); } }
+/* ===========================================================
+   PLAN DETAILS PAGE - DARK MODE ONLY
+   (Light mode remains EXACTLY the same)
+=========================================================== */
+
+body:not(.light-mode) .plan-page{
+    color: var(--child-text);
+}
+
+/* Back Link */
+
+body:not(.light-mode) .plan-back a{
+    color:#818cf8;
+}
+
+body:not(.light-mode) .plan-back a:hover{
+    color:#a5b4fc;
+}
+
+/* Cards */
+
+body:not(.light-mode) .plan-card{
+    background:var(--child-bg);
+    border:1px solid var(--child-border);
+    box-shadow:0 10px 25px rgba(0,0,0,.35);
+}
+
+/* Titles */
+
+body:not(.light-mode) .plan-card h2,
+body:not(.light-mode) .plan-card h3{
+    color:var(--child-text);
+}
+
+/* Status Pills */
+
+body:not(.light-mode) .plan-pill.active{
+    background:rgba(16,185,129,.15);
+    color:#34d399;
+}
+
+body:not(.light-mode) .plan-pill.inactive{
+    background:rgba(148,163,184,.12);
+    color:#cbd5e1;
+}
+
+/* Price */
+
+body:not(.light-mode) .plan-price{
+    color:var(--accent-glow);
+}
+
+/* Meta */
+
+body:not(.light-mode) .plan-meta{
+    color:var(--child-text-sec);
+}
+
+/* Features */
+
+body:not(.light-mode) .plan-feature-item{
+    background:rgba(255,255,255,.03);
+    border:1px solid var(--child-border);
+}
+
+body:not(.light-mode) .plan-feature-icon{
+    background:rgba(16,185,129,.18);
+    color:#34d399;
+}
+
+/* Stats Boxes */
+
+body:not(.light-mode) .stats-box.indigo{
+    background:rgba(99,102,241,.12);
+}
+
+body:not(.light-mode) .stats-box.green{
+    background:rgba(16,185,129,.12);
+}
+
+body:not(.light-mode) .stats-box.yellow{
+    background:rgba(245,158,11,.12);
+}
+
+body:not(.light-mode) .stats-box .label{
+    color:var(--child-text-sec);
+}
+
+body:not(.light-mode) .stats-box .value{
+    color:var(--child-text);
+}
+
+/* Details */
+
+body:not(.light-mode) .detail-row{
+    border-bottom:1px solid var(--child-border);
+}
+
+body:not(.light-mode) .detail-label{
+    color:var(--child-text-sec);
+}
+
+body:not(.light-mode) .detail-value{
+    color:var(--child-text);
+}
+
+/* Danger Card */
+
+body:not(.light-mode) .danger-card{
+    border-color:rgba(239,68,68,.35);
+}
+
+/* Danger Button */
+
+body:not(.light-mode) .danger-btn{
+    background:rgba(239,68,68,.10);
+    border:1px solid rgba(239,68,68,.25);
+    color:#f87171;
+}
+
+body:not(.light-mode) .danger-btn:hover{
+    background:rgba(239,68,68,.18);
+}
 </style>
 
 <div class="plan-page">

@@ -24,47 +24,72 @@ class QRCodeController extends Controller
 
     public function create()
     {
-        $business = Auth::user()->business;
-        $branches = $business->branches;
-        $employees = $business->employees ?? []; // Adjust based on your employee logic
+        $user = auth()->user();
 
-        return view('qr.create', compact('branches', 'employees'));
+        if (!$user->activeSubscription) {
+            return redirect()->route('plans.index')
+                ->with('error', 'Please subscribe to a plan first to generate QR codes.');
+        }
+
+        $currentQrCount = $user->business->qrCodes()->count(); 
+        $qrLimit = $user->activeSubscription->plan->limits['qr_codes'] ?? 0;
+        $isUnlimited = ($qrLimit <= 0);
+
+        if (!$isUnlimited && $currentQrCount >= $qrLimit) {
+            return redirect()->route('plans.index')
+                ->with('error', "You have reached your QR Code limit ({$qrLimit}). Please upgrade your plan.");
+        }
+
+        $branches = $user->business->branches()->orderBy('name')->get();
+
+        return view('qr.create', compact('branches'));
     }
 
     public function store(Request $request)
     {
+        $user = auth()->user();
+
+        // ✅ PLAN LIMIT CHECK
+        if (!$user->activeSubscription) {
+            return redirect()->route('plans.index')
+                ->with('error', 'Please subscribe to a plan first to generate QR codes.');
+        }
+
+        $currentQrCount = $user->business->qrCodes()->count(); 
+        $qrLimit = $user->activeSubscription->plan->limits['qr_codes'] ?? 0;
+        $isUnlimited = ($qrLimit <= 0);
+
+        if (!$isUnlimited && $currentQrCount >= $qrLimit) {
+            return back()->with('error', "You have reached your QR Code limit ({$qrLimit}). Please upgrade your plan to generate more.");
+        }
+
+        // ✅ 1. Validation
         $request->validate([
             'name' => 'required|string|max:255',
-            'type' => 'required|in:table,room,employee,counter,custom',
-            'identifier' => 'nullable|string|max:50',
+            'type' => 'required|string',
+            'identifier' => 'nullable|string|max:255',
+            'destination_url' => 'required|url|max:500', 
             'branch_id' => 'nullable|exists:branches,id',
-            'employee_id' => 'nullable|exists:users,id',
         ]);
 
-        $business = Auth::user()->business;
+        // ✅ 2. SERVICE KO CALL KARO (DB Save + Image Generate dono service karega)
         $qrService = app(QRCodeService::class);
+        $qrService->generate($user->business, $request->all());
 
-        $qrCode = $qrService->generate($business, $request->all());
-
+        // ✅ 3. Redirect
         return redirect()->route('qr-codes.index')
             ->with('success', 'QR Code generated successfully!');
     }
 
     public function show(QRCode $qrCode)
     {
-        // Ensure the user owns this QR code
-        if ($qrCode->business_id !== Auth::user()->business->id) {
-            abort(403);
-        }
-
+        if ($qrCode->business_id !== Auth::user()->business->id) abort(403);
         return view('qr.show', compact('qrCode'));
     }
 
     public function download(QRCode $qrCode, string $format)
     {
-        if ($qrCode->business_id !== Auth::user()->business->id) {
-            abort(403);
-        }
+        if ($qrCode->business_id !== Auth::user()->business->id) abort(403);
 
         $qrService = app(QRCodeService::class);
         return $qrService->download($qrCode, $format);
@@ -78,11 +103,11 @@ class QRCodeController extends Controller
             'start_number' => 'required|integer|min:1',
             'end_number' => 'required|integer|min:1|gte:start_number',
             'branch_id' => 'nullable|exists:branches,id',
+            'destination_url' => 'required|url|max:500',
         ]);
 
         $business = Auth::user()->business;
         $qrService = app(QRCodeService::class);
-
         $qrService->generateBulk($business, $request->all());
 
         return redirect()->back()->with('success', 'Bulk QR Codes generated successfully!');
@@ -90,11 +115,8 @@ class QRCodeController extends Controller
 
     public function destroy(QRCode $qrCode)
     {
-        if ($qrCode->business_id !== Auth::user()->business->id) {
-            abort(403);
-        }
+        if ($qrCode->business_id !== Auth::user()->business->id) abort(403);
 
-        // Delete files from storage
         if ($qrCode->qr_image_path) Storage::delete('public/' . $qrCode->qr_image_path);
         if ($qrCode->qr_svg_path) Storage::delete('public/' . $qrCode->qr_svg_path);
 

@@ -20,17 +20,17 @@ class LandingPageController extends Controller
             ->firstOrFail();
 
         // Record the scan using our Service
-        $scanService = app(QRCodeService::class);
-        $scan = $scanService->recordScan($qrCode, [
-            'ip_address' => request()->ip(),
-        ]);
+        // $scanService = app(QRCodeService::class);
+        // $scan = $scanService->recordScan($qrCode, [
+        //     'ip_address' => request()->ip(),
+        // ]);
 
-        session(['current_scan_id' => $scan->id]);
+        // session(['current_scan_id' => $scan->id]);
 
         return view('landing.review-page', [
             'qrCode' => $qrCode,
             'business' => $qrCode->business,
-            'scan' => $scan,
+            'scan' => null,
         ]);
     }
 
@@ -70,36 +70,39 @@ class LandingPageController extends Controller
         }
     }
 
-    public function submitReview(Request $request, string $slug)
+        public function submitReview(Request $request, string $slug)
     {
-        $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
-            'review_text' => 'required|string|max:1000',
-            'customer_name' => 'nullable|string|max:100',
-        ]);
+        try {
+            $qrCode = QRCode::where('slug', $slug)->firstOrFail();
 
-        $qrCode = QRCode::where('slug', $slug)->firstOrFail();
+            $validated = $request->validate([
+                'rating' => 'required|integer|min:1|max:5',
+                'review_text' => 'required|string|max:1000',
+                'customer_name' => 'nullable|string|max:100',
+            ]);
 
-        $review = Review::create([
-            'business_id' => $qrCode->business_id,
-            'branch_id' => $qrCode->branch_id,
-            'qr_code_id' => $qrCode->id,
-            'scan_id' => session('current_scan_id'),
-            'employee_id' => $qrCode->employee_id,
-            'rating' => $request->rating,
-            'review_text' => $request->review_text,
-            'customer_name' => $request->customer_name,
-            'source' => 'qr_scan',
-            'status' => 'pending',
-        ]);
+            $review = Review::create([
+                'business_id' => $qrCode->business_id,
+                'qr_code_id' => $qrCode->id,
+                'rating' => $validated['rating'],
+                'review_text' => $validated['review_text'],
+                'customer_name' => $validated['customer_name'] ?? null,
+                'source' => 'qr_scan',
+                'status' => 'pending',
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'review_id' => $review->id,
-            'google_review_link' => $qrCode->business->google_review_link,
-        ]);
+            return response()->json([
+                'success' => true,
+                'review_id' => $review->id,
+                'google_review_link' => $qrCode->business->google_review_link ?? null,
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'message' => $e->validator->errors()->first()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'DB Error: ' . $e->getMessage()], 500);
+        }
     }
-
     public function markReviewPublished(Request $request, string $slug)
     {
         $request->validate(['review_id' => 'required|exists:reviews,id']);

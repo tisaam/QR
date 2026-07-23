@@ -54,6 +54,177 @@
     .ticket-title { font-size: 1.2rem; font-weight: 700; color: #111827; margin: 0 0 0.75rem; }
     .ticket-divider { border-top: 1px solid #e5e7eb; margin: 1rem 0; }
     @media (max-width: 992px) { .ticket-layout { grid-template-columns: 1fr; } }
+/* ==========================================================
+   DARK MODE ONLY
+   (Light mode remains exactly the same)
+========================================================== */
+
+body.dark-mode .ticket-page{
+    color:#e5e7eb;
+}
+
+/* Back Link */
+body.dark-mode .ticket-back a{
+    color:#818cf8;
+}
+body.dark-mode .ticket-back a:hover{
+    color:#a5b4fc;
+}
+
+/* Panels */
+body.dark-mode .ticket-panel{
+    background:#1e293b;
+    border-color:#334155;
+    box-shadow:none;
+}
+
+/* Titles */
+body.dark-mode .ticket-title,
+body.dark-mode .section-title,
+body.dark-mode .reply-title,
+body.dark-mode .thread-name,
+body.dark-mode .user-name,
+body.dark-mode .detail-value{
+    color:#f8fafc;
+}
+
+/* Thread */
+body.dark-mode .thread-body{
+    color:#cbd5e1;
+}
+
+body.dark-mode .thread-date{
+    color:#94a3b8;
+}
+
+body.dark-mode .thread-avatar{
+    background:#312e81;
+    color:#c7d2fe;
+}
+
+body.dark-mode .thread-avatar.admin{
+    background:#4c1d95;
+    color:#ddd6fe;
+}
+
+/* Staff Badge */
+body.dark-mode .staff-badge{
+    background:#5b21b6;
+    color:#ede9fe;
+}
+
+/* Attachment */
+body.dark-mode .attachment-box{
+    background:#0f172a;
+    border-color:#334155;
+}
+
+body.dark-mode .attachment-link{
+    color:#818cf8;
+}
+
+/* Reply */
+body.dark-mode .reply-form textarea,
+body.dark-mode .reply-actions select{
+    background:#0f172a;
+    color:#f1f5f9;
+    border-color:#334155;
+}
+
+body.dark-mode .reply-form textarea::placeholder{
+    color:#94a3b8;
+}
+
+body.dark-mode .reply-form textarea:focus,
+body.dark-mode .reply-actions select:focus{
+    border-color:#6366f1;
+    box-shadow:0 0 0 3px rgba(99,102,241,.2);
+}
+
+/* Reply Button */
+body.dark-mode .reply-actions button{
+    background:#6366f1;
+}
+
+body.dark-mode .reply-actions button:hover{
+    background:#4f46e5;
+}
+
+/* Detail List */
+body.dark-mode .detail-list>div{
+    border-bottom-color:#334155;
+}
+
+body.dark-mode .detail-label,
+body.dark-mode .business-label{
+    color:#94a3b8;
+}
+
+/* User */
+body.dark-mode .user-avatar{
+    background:#312e81;
+    color:#c7d2fe;
+}
+
+body.dark-mode .user-email{
+    color:#94a3b8;
+}
+
+/* Business */
+body.dark-mode .business-box{
+    border-top-color:#334155;
+}
+
+body.dark-mode .business-name{
+    color:#818cf8;
+}
+
+/* Divider */
+body.dark-mode .ticket-divider{
+    border-top-color:#334155;
+}
+
+/* Status Badges */
+body.dark-mode .status-open{
+    background:#7f1d1d;
+    color:#fecaca;
+}
+
+body.dark-mode .status-in-progress{
+    background:#1e3a8a;
+    color:#bfdbfe;
+}
+
+body.dark-mode .status-resolved{
+    background:#14532d;
+    color:#bbf7d0;
+}
+
+body.dark-mode .status-closed{
+    background:#334155;
+    color:#cbd5e1;
+}
+
+/* Priority Badges */
+body.dark-mode .priority-low{
+    background:#334155;
+    color:#cbd5e1;
+}
+
+body.dark-mode .priority-medium{
+    background:#1e40af;
+    color:#dbeafe;
+}
+
+body.dark-mode .priority-high{
+    background:#9a3412;
+    color:#fed7aa;
+}
+
+body.dark-mode .priority-urgent{
+    background:#7f1d1d;
+    color:#fecaca;
+}
 </style>
 
 <div class="ticket-page">

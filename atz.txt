@@ -1,0 +1,927 @@
+<?php
+require_once 'admin/includes/db.php';
+
+ $sliderStmt = $db->prepare("
+    SELECT *
+    FROM hero_sliders
+    WHERE status = 1
+    ORDER BY sort_order ASC, id ASC
+");
+ $sliderStmt->execute();
+ $sliders = $sliderStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// fetch about section (single row)
+ $stmt = $db->prepare("SELECT * FROM about_section LIMIT 1");
+ $stmt->execute();
+ $about = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// fetch writing style
+ $stmt = $db->query("SELECT * FROM writing_style LIMIT 1");
+ $ws = $stmt->fetch(PDO::FETCH_ASSOC);
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Niyati Kapadia | Author & Storyteller</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Swiper CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
+    <!-- Google Font for Monotype Corsiva alternative (Works on all devices) -->
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+
+    <link rel="icon" type="image/png" href="assets/images/favicon.png">
+    
+    <style>
+        .hero-bg-zoom {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-color: white;
+        }
+        @media (max-width:768px){
+            .hero-section,
+            .swiper-slide{
+                height: 45vh;
+            }
+            .hero-bg-zoom{
+                background-size: contain;
+                background-position: center;
+                background-repeat: no-repeat;
+                background-color: #fff;
+            }
+        }
+    </style>
+</head>
+<?php include 'abc.php'; ?>
+<body>
+
+    <!-- PRELOADER -->
+    <div id="preloader">
+        <div class="preloader-text">NIYATI KAPADIA</div>
+        <div class="preloader-line"></div>
+    </div>
+
+    <!-- GLOBAL NAVIGATION -->
+   
+
+    <!-- MAIN CONTENT AREA -->
+    <main id="main">
+
+        <!-- HERO SECTION -->
+        <section class="hero-section">
+            <div class="swiper heroSwiper" style="position: absolute; inset: 0; z-index: 1;">
+                <div class="swiper-wrapper">
+                    <?php foreach ($sliders as $slider) { ?>
+                        <div class="swiper-slide">
+                            <div class="hero-bg-zoom"
+                                style="background-image: url('admin/uploads/sliders/<?= htmlspecialchars($slider['image']) ?>');">
+                            </div>
+                            <div class="position-absolute top-0 start-0 end-0 bottom-0 bg-white opacity-0"></div>
+                        </div>
+                    <?php } ?>
+                </div>
+                <div class="swiper-button-next text-white hover-text-gold"></div>
+                <div class="swiper-button-prev text-white hover-text-gold"></div>
+            </div>
+        </section>
+
+        <!-- NEW GUJARATI QUOTE SECTION -->
+        <section class="py-5-custom bg-white position-relative">
+            <div class="container text-center position-relative" style="z-index: 10;">
+                
+                <!-- First Quote -->
+                <div class="mb-5">
+                   <b> <p class="mb-3" style="font-family: 'Monotype Corsiva', 'Great Vibes', cursive; font-size: 1rem; line-height: 1.6; color: #333;">
+                        માણસનું મન એટલે સતત ધમધમતી રહેતી વિચારોની ફેક્ટરી...એ વિચારોને ભેગા કરી એમાંથી રસપ્રદ વાર્તા રચવી મને ગમે છે અને એટલે જ હું લખું છું!
+                    </p></b>
+                    <p class="fw-bold mb-0" style="color: #D4AF37; font-family: 'Monotype Corsiva', 'Great Vibes', cursive; font-size: 1.2rem;">
+                        –નિયતી કાપડિયા " નિર્ઝર "
+                    </p>
+                </div>
+
+                <!-- Decorative Divider -->
+                <div class="d-flex align-items-center justify-content-center my-4">
+                    <div style="height: 1px; width: 60px; background: #D4AF37;"></div>
+                    <div class="mx-3 text-nk-gold" style="font-size: 1.5rem;">✦</div>
+                    <div style="height: 1px; width: 60px; background: #D4AF37;"></div>
+                </div>
+
+                <!-- Second Quote -->
+                <div>
+                   <b> <p class="mb-3" style="font-family: 'Monotype Corsiva', 'Great Vibes', cursive; font-size: 1rem; line-height: 1.6; color: #333;">
+                        લખવા માટે મારે ક્યારેય પ્રયત્ન નથી કરવો પડતો. એ મારા માટે શ્વાસ લેવા જેટલું સરળ છે. જેમ શ્વાસ ન લઈએ તો જીવ રૂંધાય એમ હું જો ના લખું તો મારો જીવ અકળાય...
+                    </p></b>
+                    <p class="fw-bold mb-0" style="color: #D4AF37; font-family: 'Monotype Corsiva', 'Great Vibes', cursive; font-size: 1.2rem;">
+                       –નિયતી કાપડિયા " નિર્ઝર " 
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ABOUT PREVIEW SECTION -->
+        <section id="about-preview" class="py-6-custom bg-white position-relative overflow-hidden">
+            <div class="container d-flex flex-column flex-lg-row align-items-center gap-4-custom">
+                <div class="w-100 w-lg-50 position-relative reveal-up">
+                    <div class="position-absolute top-0 start-0 end-0 bottom-0 border border-nk-gold"
+                        style="opacity: 0.3; transform: translate(1rem, 1rem);"></div>
+                    <img src="<?= $about['image']; ?>" alt="About Image"
+                        class="w-100 h-auto object-fit-cover shadow-2xl-custom position-relative" style="z-index: 10; transition: all 0.7s ease;">
+                </div>
+                <div class="w-100 w-lg-50 reveal-up">
+                    <span class="font-body text-nk-accent ls-widest text-uppercase small mb-3 d-block">
+                        <?= $about['title_small']; ?>
+                    </span>
+                    <h2 class="font-heading text-section-title mb-4-custom lh-1">
+                        <?= $about['title_main']; ?> <br>
+                        <span class="fst-italic font-subheading text-nk-gold">
+                            <?= $about['title_highlight']; ?>
+                        </span>
+                    </h2>
+                    <p class="font-body text-nk-muted lh-base mb-4 fs-9">
+                   <b style="font-family: 'Monotype Corsiva', 'Great Vibes', cursive;"> <?= $about['desc1']; ?></b>
+                    </p>
+                    <p class="font-body text-nk-muted lh-base mb-5-custom-lg fs-5">
+                        <?= $about['desc2']; ?>
+                    </p>
+                    <img src="<?= $about['signature']; ?>" alt="Signature" class="mb-4-custom"
+                        style="height: 4rem; opacity: 0.4; filter: invert(1);">
+                    <a href="<?= $about['link']; ?>" class="magnetic-btn"
+                        style="border: none; border-bottom: 1px solid var(--nk-text); border-radius: 0; padding: 0 0 4px 0;">
+                        <span class="magnetic-btn-inner fw-bold text-nk-text" style="padding: 0;">
+                            Discover the Full Story
+                        </span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- WRITING STYLE SECTION -->
+        <section id="writing-style" class="py-8-custom bg-nk-bg border-top border-bottom">
+            <div class="container d-flex flex-column flex-lg-row align-items-center gap-4-custom">
+                <div class="w-100 w-lg-50 reveal-up">
+                    <span class="font-body text-nk-gold ls-widest text-uppercase small mb-3 d-block">
+                        <?= $ws['subtitle'] ?? '' ?>
+                    </span>
+                    <h2 class="font-heading text-section-title mb-4-custom lh-1">
+                        <?= $ws['title_main'] ?? '' ?> <br>
+                        <span class="fst-italic font-subheading text-nk-accent">
+                            <?= $ws['title_highlight'] ?? '' ?>
+                        </span>
+                    </h2>
+                    <p class="font-body text-nk-muted lh-base mb-4 fs-5">
+                        <?= $ws['desc'] ?? '' ?>
+                    </p>
+                    <div class="row row-cols-1 row-cols-md-2 g-4 mt-5-custom">
+                        <div>
+                            <h4 class="font-heading fs-4 mb-1 text-nk-text">
+                                <?= $ws['feature1_title'] ?? '' ?>
+                            </h4>
+                            <p class="font-body small text-nk-muted">
+                                <?= $ws['feature1_desc'] ?? '' ?>
+                            </p>
+                        </div>
+                        <div>
+                            <h4 class="font-heading fs-4 mb-1 text-nk-text">
+                                <?= $ws['feature2_title'] ?? '' ?>
+                            </h4>
+                            <p class="font-body small text-nk-muted">
+                                <?= $ws['feature2_desc'] ?? '' ?>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-100 w-lg-50 reveal-up">
+                    <div class="row row-cols-2 g-2">
+                        <img src="<?= $ws['image1'] ?? '' ?>"
+                            class="w-100 h-100 object-fit-cover grayscale-custom shadow-lg"
+                            style="border-radius: 4px; min-height: 250px;">
+                        <img src="<?= $ws['image2'] ?? '' ?>"
+                            class="w-100 h-100 object-fit-cover grayscale-custom shadow-lg mt-5-custom"
+                            style="border-radius: 4px; min-height: 250px;">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FEATURED BOOKS (Marquee Slider) -->
+        <?php
+        $stmt = $db->query("SELECT * FROM featured_books WHERE status=1 ORDER BY id DESC");
+        $books = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        ?>
+        <section id="featured-books" class="py-8-custom bg-nk-bg border-top border-bottom overflow-hidden">
+            <div class="container text-center mb-5-custom-lg reveal-up">
+                <span class="font-body text-nk-accent ls-widest text-uppercase small mb-3 d-block">
+                    Literary Works
+                </span>
+                <h2 class="font-heading text-section-title">
+                    Featured <span class="fst-italic font-subheading text-nk-gold">Novels</span>
+                </h2>
+            </div>
+            <div class="swiper featuredSwiper" style="padding: 2rem 0; overflow: visible;">
+                <div class="swiper-wrapper" style="align-items: center;">
+                    <?php foreach ($books as $b) { ?>
+                        <div class="swiper-slide" style="width: 350px; height: 500px; margin-right: 50px; flex-shrink: 0;">
+                            <div class="book-card-3d" style="height: 100%; width: 100%;">
+                                <div class="book-card-3d-inner">
+                                    <img src="admin/<?= htmlspecialchars($b['image']); ?>" 
+                                         alt="<?= htmlspecialchars($b['title']); ?>"
+                                         style="width:100%; height:70%; object-fit:cover; border-radius:10px; display:block;">
+                                    <div class="book-overlay"></div>
+                                    <div class="book-content">
+                                        <span class="text-nk-gold font-body small text-uppercase ls-widest">
+                                            <?= $b['category'] ?>
+                                        </span>
+                                        <h3 class="font-heading text-white fs-2 mt-4 mb-4">
+                                            <?= $b['title'] ?>
+                                        </h3>
+                                        <div class="read-more">
+                                            <a href="<?= $b['link'] ?>" class="text-white small text-uppercase ls-widest"
+                                                style="border-bottom: 1px solid white; padding-bottom: 4px;">
+                                                Read More
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php } ?>
+                </div>
+            </div>
+            <div class="text-center mt-5-custom reveal-up">
+                <a href="books.php" class="magnetic-btn border">
+                    <span class="magnetic-btn-inner text-nk-text">View All Books</span>
+                    <span class="magnetic-btn-bg"></span>
+                </a>
+            </div>
+        </section>
+
+        <!-- VIDEO REVIEWS SECTION -->
+        <?php
+        $stmt = $db->query("SELECT * FROM hero_video WHERE status=1 ORDER BY id DESC");
+        $videos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        ?>
+       <section id="reader-experiences" class="py-6-custom bg-white border-bottom">
+    <div class="container text-center mb-5-custom reveal-up">
+        <span class="font-body text-nk-accent ls-widest text-uppercase small mb-3 d-block">
+            Reader Experiences
+        </span>
+        <h2 class="font-heading text-section-title">
+            What They <span class="fst-italic font-subheading text-nk-gold">Are Saying</span>
+        </h2>
+    </div>
+
+    <div class="container pb-4">
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-5 g-3">
+            <?php foreach ($videos as $v) { ?>
+                <a href="<?= htmlspecialchars($v['video_url']) ?>" target="_blank" rel="noopener noreferrer" class="col text-decoration-none">
+                    <div class="position-relative group" style="border-radius:12px; overflow: hidden; box-shadow:0 10px 30px rgba(0,0,0,0.1);">
+                        <img src="admin/<?= htmlspecialchars($v['image']) ?>" 
+                             alt="Video Thumbnail"
+                             class="w-100 h-64-custom object-fit-cover hover-scale-custom"
+                             onerror="this.src='https://via.placeholder.com/300?text=No+Image'">
+                        <div class="position-absolute top-0 start-0 end-0 bottom-0 bg-black opacity-20 group-hover-opacity-40 pointer-events-none"></div>
+                        <div class="position-absolute top-0 start-0 end-0 bottom-0 d-flex align-items-center justify-content-center pointer-events-none">
+                            <div class="w-16-custom h-16-custom bg-white rounded-pill d-flex align-items-center justify-content-center text-nk-text group-hover-scale-110">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M8 5v14l11-7z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            <?php } ?>
+        </div>
+    </div>
+</section>
+
+        <?php
+        $stmt = $db->query("SELECT * FROM story_cat WHERE status=1 ORDER BY id ASC");
+        $cats = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        ?>
+
+        <!-- CATEGORIES SECTION -->
+        <section id="categories" class="py-8-custom position-relative"
+            style="background-image: url('assets/images/1457369804613-5_f56a3b4e.webp'); background-size:cover; background-position:center; background-attachment:fixed;">
+            <div class="position-absolute top-0 start-0 end-0 bottom-0" style="background:rgba(0,0,0,0.65);"></div>
+            <div class="container position-relative" style="z-index:10;">
+                <div class="text-center mb-5-custom-lg">
+                    <span class="text-uppercase ls-widest small d-block mb-2" 
+                          style="color: #C9A063; text-shadow: 0 0 15px rgba(201, 160, 99, 0.4); letter-spacing: 0.2em;">
+                        Exploration
+                    </span>
+                    <h2 class="mt-2" style="font-family: var(--font-heading); font-size: 4rem; line-height: 1.1;">
+                        <span style="color: #F8F4EF;">Story </span><span class="fst-italic" style="color: #C9A063;">Categories</span>
+                    </h2>
+                </div>
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+                    <?php foreach ($cats as $c) { ?>
+                        <?php
+                        $stmt2 = $db->prepare("SELECT COUNT(*) FROM stories WHERE cat_id=?");
+                        $stmt2->execute([$c['id']]);
+                        $count = $stmt2->fetchColumn();
+                        ?>
+                        <a href="<?= $c['link'] ?>" class="glass-card">
+                            <div class="fs-2 mb-4-custom" 
+                                 style="color: #C9791A; font-size: 26px; text-shadow: 0 0 20px rgba(201, 160, 99, 0.3);">
+                                <?= $c['subtitle'] ?>
+                            </div>
+                            <h3 class="fs-3 mb-1" style="color: #5C1E24;">
+                                <?= $c['title'] ?>
+                            </h3>
+                            <p class="mb-0" style="color:#444444; line-height: 1.6;">
+                                <?= $c['description'] ?>
+                            </p>
+                        </a>
+                    <?php } ?>
+                </div>
+            </div>
+        </section>
+
+        <!-- READER REVIEWS (Swiper Slider) -->
+        <?php
+        $stmt = $db->query("SELECT * FROM reviews WHERE status=1 ORDER BY id DESC");
+        $reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        ?>
+        <section id="reviews" class="py-8-custom bg-white">
+            <div class="container">
+                <div class="text-center mb-5-custom-lg">
+                    <span class="text-nk-accent text-uppercase ls-widest small">Testimonials</span>
+                    <h2 class="fs-2 mt-2">
+                        Words from <span class="text-nk-gold fst-italic">the Heart</span>
+                    </h2>
+                </div>
+                <div class="swiper reviewsSwiper">
+                    <div class="swiper-wrapper">
+                        <?php foreach($reviews as $r){ ?>
+                        <div class="swiper-slide">
+                            <div class="bg-nk-bg border" style="padding:3rem 4rem;">
+                                <div class="text-nk-gold fs-3 mb-4-custom">
+                                    <?= $r['rating'] ?>
+                                </div>
+                                <p class="font-quote text-sm md:text-base text-nk-text mb-5-custom-lg lh-base">  "<?= $r['message'] ?>"</p>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="bg-nk-accent text-white d-flex align-items-center justify-content-center"
+                                         style="width:3rem;height:3rem;border-radius:50%;">
+                                        <?= strtoupper($r['initial']) ?>
+                                    </div>
+                                    <div>
+                                        <h4 style="margin:0;"><?= $r['name'] ?></h4>
+                                        <p class="small text-body-secondary" style="margin:0;"><?= $r['location'] ?></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <?php } ?>
+                    </div>
+                    <div class="swiper-pagination"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LUXURY TIMELINE (Awards & Journey) -->
+        <?php
+        $stmt = $db->query("SELECT * FROM timeline WHERE status=1 ORDER BY year ASC");
+        $timeline = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        ?>
+        <section id="timeline" class="py-8-custom bg-nk-bg border-top position-relative overflow-hidden">
+            <div class="mw-custom-4xl container position-relative" style="z-index:10;">
+                <div class="text-center mb-5-custom-lg">
+                    <span class="text-nk-accent text-uppercase ls-widest small">Milestones</span>
+                    <h2 class="fs-2 mt-2">
+                        A Journey in <span class="text-nk-gold fst-italic">Ink</span>
+                    </h2>
+                </div>
+                <div class="timeline-container">
+                    <div id="timelineLine" class="timeline-line"></div>
+                    <?php foreach($timeline as $t){ ?>
+                    <div class="timeline-event">
+                        <div class="timeline-dot"></div>
+                        <span class="small fw-bold text-nk-accent d-block mb-4">
+                            <?= $t['year'] ?>
+                        </span>
+                        <h3 class="text-base mb-5">
+                            <?= $t['title'] ?>
+                        </h3>
+                        <p class="text-nk-muted">
+                            <?= $t['description'] ?>
+                        </p>
+                    </div>
+                    <?php } ?>
+                </div>
+            </div>
+        </section>
+
+        <!-- QUOTE WALL (Parallax) -->
+        <section id="quote-wall" class="py-10-custom bg-nk-text text-white position-relative overflow-hidden">
+            <div class="position-absolute top-0 start-0 end-0 bottom-0"
+                style="opacity: 0.1; background-image: url('assets/images/stardust_549c024a.png');"></div>
+            <div class="mw-custom-5xl container text-center position-relative" style="z-index: 10;">
+                <div class="text-nk-gold fs-1 mb-4-custom" style="opacity: 0.5;">"</div>
+                <p id="splitQuote" class="font-quote lh-1" style="font-size: 7vh; margin-bottom: 3rem; color: #ddb123;">
+                    Some stories are written with ink. Others are written with emotions — and those are the ones that
+                    never leave you.
+                </p>
+                <div class="bg-nk-gold mx-auto mb-4-custom" style="width: 6rem; height: 1px;"></div>
+                <p class="font-heading fs-4 ls-widest text-uppercase text-nk-accent">Niyati Kapadia (Nirjhar)</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- GLOBAL FOOTER -->
+    <?php include 'abc1.php'; ?>
+
+    <!-- Scripts -->
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <!-- Lenis Smooth Scroll -->
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.27/bundled/lenis.min.js"></script>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Swiper JS -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom Script -->
+    <script src="assets/js/script.js"></script>
+</body>
+
+<style>
+    /* ==========================================================
+       CUSTOM HELPERS ADDED TO SUPPORT BOOTSTRAP MIGRATION
+       ========================================================== */
+    .mb-5-custom-lg { margin-bottom: 5rem; }
+    .mt-5-custom { margin-top: 5rem; }
+    .py-5-custom { padding-top: 5rem; padding-bottom: 5rem; }
+    .py-6-custom { padding-top: 6rem; padding-bottom: 6rem; }
+    .py-8-custom { padding-top: 8rem; padding-bottom: 8rem; }
+    .py-10-custom { padding-top: 10rem; padding-bottom: 10rem; }
+    .mb-4-custom { margin-bottom: 4rem; }
+
+    .gap-2 { gap: 0.5rem; }
+    .gap-3 { gap: 1rem; }
+    .gap-4-custom { gap: 4rem; }
+
+    .ls-widest { letter-spacing: 0.1em; }
+    .fs-md-2 { font-size: 1.5rem !important; }
+    .fs-md-5xl-custom { font-size: 3rem !important; line-height: 1 !important; }
+    .fs-lg-7xl-custom { font-size: 4.5rem !important; line-height: 1 !important; }
+    .fs-1 { font-size: 3.5rem; }
+
+    .w-lg-50 { width: 50% !important; }
+    .mw-custom-4xl { max-width: 56rem; margin: 0 auto; }
+    .mw-custom-5xl { max-width: 64rem; margin: 0 auto; }
+
+    .h-64-custom { height: 16rem; }
+    .w-16-custom { width: 4rem; }
+    .h-16-custom { height: 4rem; }
+
+    .hover-text-gold { transition: color 0.3s ease; }
+    .hover-text-gold:hover { color: var(--nk-gold) !important; }
+    
+    .hover-scale-custom { transition: transform 0.5s ease; }
+    .hover-scale-custom:hover { transform: scale(1.05); }
+
+    .group:hover .group-hover-opacity-40 { opacity: 0.4 !important; transition: opacity 0.3s ease; }
+    .group:hover .group-hover-scale-110 { transform: scale(1.1); transition: transform 0.3s ease; }
+</style>
+</html>
+
+
+<?php
+require_once 'admin/includes/db.php';
+
+/* AUTHOR */
+ $stmt = $db->prepare("SELECT * FROM authors WHERE status = 1 LIMIT 1");
+ $stmt->execute();
+ $author = $stmt->fetch(PDO::FETCH_ASSOC);
+
+/* PRESS MEDIA */
+ $pressStmt = $db->prepare("
+    SELECT *
+    FROM author_press
+    ORDER BY source ASC, id DESC
+");
+ $pressStmt->execute();
+
+/* AWARDS */
+ $awardStmt = $db->prepare("
+    SELECT *
+    FROM author_awards
+    WHERE status = 1
+    ORDER BY sort_order ASC, id DESC
+");
+ $awardStmt->execute();
+
+/* GALLERY */
+ $galleryStmt = $db->prepare("
+    SELECT *
+    FROM author_gallery
+    WHERE status = 1
+    ORDER BY sort_order ASC, id ASC
+");
+ $galleryStmt->execute();
+
+ $galleryImages = $galleryStmt->fetchAll(PDO::FETCH_ASSOC);
+?>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Niyati Kapadia</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="icon" type="image/png" href="assets/images/favicon.png">
+    <style>
+        /* Custom styles to replace Tailwind utilities */
+        .tracking-widest { letter-spacing: 0.1em; }
+        .max-w-7xl { max-width: 80rem; }
+        .max-w-6xl { max-width: 72rem; }
+        .max-w-5xl { max-width: 64rem; }
+        .max-w-4xl { max-width: 56rem; }
+        
+        /* 
+           FIX: This tells the browser that the MAIN content needs 
+           a safe distance from the very top of the window to avoid the fixed navbar.
+        */
+        main#main {
+            scroll-margin-top: 100px; /* Adjust this value if your navbar is taller/shorter */
+        }
+        @media (max-width: 991px) {
+            main#main {
+                scroll-margin-top: 70px; /* Adjust this for mobile hamburger menu */
+            }
+        }
+
+        /* Responsive Padding */
+        .hero-section { padding-top: 26rem; padding-bottom: 3rem; }
+        .content-section { padding-top: 3.5rem; padding-bottom: 3.5rem; }
+        .gallery-section { padding-top: 4rem; padding-bottom: 4rem; }
+        
+        @media (min-width: 768px) {
+            .hero-section { padding-top: 34rem; padding-bottom: 6rem; }
+            .content-section { padding-top: 5rem; padding-bottom: 5rem; }
+            .gallery-section { padding-top: 6rem; padding-bottom: 6rem; }
+        }
+        @media (min-width: 992px) {
+            .hero-section { padding-top: 23rem; padding-bottom: 8rem; }
+            .content-section { padding-top: 6rem; padding-bottom: 6rem; }
+            .gallery-section { padding-top: 8rem; padding-bottom: 8rem; }
+        }
+
+        /* Responsive Typography */
+        .author-name { font-size: 2.5rem; line-height: 1.1; }
+        .quote-text { font-size: 1.25rem; }
+        
+        @media (min-width: 768px) {
+            .author-name { font-size: 4rem; }
+            .quote-text { font-size: 1.5rem; }
+        }
+        @media (min-width: 992px) {
+            .author-name { font-size: 5rem; }
+            .quote-text { font-size: 1.875rem; }
+        }
+
+        /* Hero Image Wrapper */
+        .author-image-wrapper { padding: 1rem; }
+        @media (min-width: 768px) { .author-image-wrapper { padding: 2rem; } }
+        
+        .author-image { transition: all 0.7s ease; }
+        
+        /* Hide decorative boxes on mobile to prevent overflow */
+        .hero-deco-border, .hero-deco-bg { display: none; }
+        @media (min-width: 992px) {
+            .hero-deco-bg { display: block; }
+        }
+
+        .award-card { transition: transform 0.3s ease; height: 100%; }
+        .award-card:hover { transform: scale(1.02); }
+        
+        .gallery-image { transition: transform 0.5s ease; }
+        .gallery-image:hover { transform: scale(1.02); }
+        
+        .section-gap-bottom { margin-bottom: 3rem; }
+        @media (min-width: 768px) { .section-gap-bottom { margin-bottom: 5rem; } }
+
+        .icon-large { font-size: 2.25rem; }
+        .award-title { font-size: 1.25rem; }
+        @media (min-width: 768px) { .award-title { font-size: 1.5rem; } }
+        
+        .press-title { font-size: 1.125rem; }
+        @media (min-width: 768px) { .press-title { font-size: 1.25rem; } }
+    </style>
+</head>
+
+<body>
+
+    <!-- GLOBAL NAVIGATION -->
+    <?php include 'abc.php'; ?>
+    
+    <!-- FIX: Removed margin-top and padding-top. scroll-margin-top handles the gap cleanly -->
+    <main id="main">
+        
+        <!-- REDESIGNED HERO SECTION -->
+   
+
+<section class="hero-section bg-white position-relative" style="overflow: visible;">
+    <div class="container max-w-7xl position-relative">
+        <div class="row align-items-center g-4 g-lg-5">
+
+            <div class="position-absolute d-none d-lg-block"
+                style="top: -10%; left: -5%; width: 400px; height: 400px; background-color: var(--nk-bg); border-radius: 50%; z-index: 0;">
+            </div>
+
+            <!-- Left Content -->
+            <div class="col-12 col-lg-6 position-relative reveal-up text-center text-lg-start" style="z-index: 10; overflow: visible;">
+
+                <span class="font-body text-nk-gold tracking-widest text-uppercase d-block mb-3 small fw-bold">
+                    <?= htmlspecialchars($author['subtitle'] ?? '') ?>
+                </span>
+
+                <h1 class="font-heading fw-bold text-uppercase tracking-widest mb-3 author-name">
+                    <?= htmlspecialchars($author['name'] ?? '') ?>
+                </h1>
+
+                <div class="bg-nk-gold mb-4 mx-auto mx-lg-0" style="width: 4rem; height: 2px;"></div>
+
+                <p class="font-quote text-nk-text lh-lg mb-4 quote-text">
+                    <?= htmlspecialchars($author['quote'] ?? '') ?>
+                </p>
+
+                <!-- Scrollable About Content -->
+                <div id="aboutScroll" class="font-body text-nk-muted lh-lg" style="font-size: 1rem; height: 10rem; overflow-y: scroll; padding-right: 0.75rem; -webkit-overflow-scrolling: touch;">
+                    <div class="mb-4">
+                        <?= nl2br(htmlspecialchars($author['about_1'] ?? '')) ?>
+                    </div>
+                    <div>
+                        <?= nl2br(htmlspecialchars($author['about_2'] ?? '')) ?>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Image -->
+            <div class="col-12 col-lg-6 position-relative reveal-up mt-4 mt-lg-0" style="z-index: 10;">
+                <div class="position-relative author-image-wrapper">
+
+                    <div class="position-absolute top-0 start-0 w-100 h-100 border border-nk-gold hero-deco-border"
+                        style="transform: translate(1.5rem, 1.5rem);"></div>
+
+                    <div class="position-absolute top-0 start-0 w-100 h-100 bg-nk-bg hero-deco-bg" style="transform: translate(-1rem, -1rem); z-index: -1;">
+                    </div>
+
+                    <?php if (!empty($author['image'])): ?>
+                    <img src="admin/uploads/authors/<?= htmlspecialchars($author['image']) ?>"
+                        class="w-100 h-auto object-fit-cover shadow-lg position-relative author-image"
+                        alt="<?= htmlspecialchars($author['name'] ?? 'Author Image') ?>">
+                    <?php endif; ?>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<style>
+    #aboutScroll {
+        scrollbar-width: thin;
+        scrollbar-color: #D4AF37 #f5f5f5;
+    }
+    #aboutScroll::-webkit-scrollbar {
+        width: 5px;
+    }
+    #aboutScroll::-webkit-scrollbar-track {
+        background: #f5f5f5;
+        border-radius: 10px;
+    }
+    #aboutScroll::-webkit-scrollbar-thumb {
+        background: #D4AF37;
+        border-radius: 10px;
+    }
+    #aboutScroll::-webkit-scrollbar-thumb:hover {
+        background: #B8960F;
+    }
+</style>
+
+<style>
+    .hero-section [style*="overflow-y"]::-webkit-scrollbar {
+        width: 4px;
+    }
+    .hero-section [style*="overflow-y"]::-webkit-scrollbar-track {
+        background: var(--nk-bg, #f5f5f5);
+        border-radius: 10px;
+    }
+    .hero-section [style*="overflow-y"]::-webkit-scrollbar-thumb {
+        background: #D4AF37;
+        border-radius: 10px;
+    }
+    .hero-section [style*="overflow-y"]::-webkit-scrollbar-thumb:hover {
+        background: #B8960F;
+    }
+</style>
+
+        <!-- NEW CONTENT SECTION: THE CRAFT -->
+        <section class="content-section bg-nk-bg border-top border-bottom">
+            <div class="container max-w-4xl reveal-up text-center px-3">
+
+                <h2 class="font-heading section-title mb-4" style="font-size: 1.75rem;">
+                    My Approach to
+                    <span class="fst-italic font-subheading text-nk-gold">
+                        Storytelling
+                    </span>
+                </h2>
+
+                <p class="font-body text-nk-muted lh-lg mb-4" style="font-size: 1rem;">
+                    <?= nl2br(htmlspecialchars($author['storytelling_1'] ?? '')) ?>
+                </p>
+<p class="font-body text-nk-muted lh-lg mb-5" 
+   style="font-size: 1rem; margin-top: 320px;"
+   id="storyText2">
+    <?= nl2br(htmlspecialchars($author['storytelling_2'] ?? '')) ?>
+</p>
+
+<style>
+    @media (max-width: 991px) {
+        #storyText2 { margin-top: 40px !important; }
+    }
+    @media (max-width: 767px) {
+        #storyText2 { margin-top: 30px !important; }
+    }
+    @media (max-width: 575px) {
+        #storyText2 { margin-top: 20px !important; }
+    }
+</style>
+                <?php if (!empty($author['signature_image'])) { ?>
+                    <img src="admin/uploads/authors/<?= htmlspecialchars($author['signature_image']) ?>" alt="Signature"
+                        class="mx-auto d-block" style="height: 3rem; opacity: 0.4; filter: invert(1);">
+                <?php } ?>
+
+            </div>
+        </section>
+
+        <!-- AWARDS & RECOGNITION -->
+        <section class="content-section bg-white border-bottom">
+            <div class="container max-w-5xl reveal-up">
+
+                <div class="text-center section-gap-bottom">
+                    <span class="font-body text-nk-accent tracking-widest text-uppercase d-block mb-3 small">
+                        Milestones
+                    </span>
+
+                    <h2 class="font-heading section-title" style="font-size: 1.75rem;">
+                        Awards &
+                        <span class="fst-italic font-subheading text-nk-gold">
+                            Recognition
+                        </span>
+                    </h2>
+                </div>
+
+                <div class="row g-3 g-md-5">
+
+                    <?php while ($award = $awardStmt->fetch(PDO::FETCH_ASSOC)) { ?>
+
+                        <div class="col-12 col-md-6">
+                            <div class="border p-3 p-md-4 text-center bg-nk-bg shadow-lg award-card"
+                                style="border-radius: 4px;">
+
+                                <div class="text-nk-gold icon-large mb-3">
+                                    <?= htmlspecialchars($award['icon'] ?? '') ?>
+                                </div>
+
+                                <h4 class="font-heading mb-2 text-nk-text award-title">
+                                    <?= htmlspecialchars($award['title'] ?? '') ?>
+                                </h4>
+
+                                <p class="font-body small text-nk-muted mb-3">
+                                    <?= htmlspecialchars($award['subtitle'] ?? '') ?>
+                                </p>
+
+                                <p class="font-body text-nk-muted mb-0" style="font-size: 0.9rem;">
+                                    <?= htmlspecialchars($award['description'] ?? '') ?>
+                                </p>
+
+                            </div>
+                        </div>
+
+                    <?php } ?>
+
+                </div>
+
+            </div>
+        </section>
+
+        <!-- PRESS & MEDIA -->
+        <section class="content-section bg-nk-bg border-bottom">
+            <div class="container max-w-6xl reveal-up">
+
+                <div class="text-center section-gap-bottom">
+                    <span class="font-body text-nk-accent tracking-widest text-uppercase d-block mb-3 small">
+                        In the News
+                    </span>
+
+                    <h2 class="font-heading section-title" style="font-size: 1.75rem;">
+                        Press &
+                        <span class="fst-italic font-subheading text-nk-gold">
+                            Media
+                        </span>
+                    </h2>
+                </div>
+
+                <div class="row g-4">
+                    <?php while ($press = $pressStmt->fetch(PDO::FETCH_ASSOC)) { ?>
+
+                        <div class="col-12 col-md-4">
+                            <div class="bg-white border p-4 shadow-lg h-100">
+
+                                <h4 class="font-heading mb-3 text-nk-text press-title">
+                                    "<?= htmlspecialchars($press['title'] ?? '') ?>"
+                                </h4>
+
+                                <p class="font-body text-nk-muted mb-4" style="font-size: 0.95rem;">
+                                    <?= htmlspecialchars($press['description'] ?? '') ?>
+                                </p>
+
+                                <span class="font-body small text-nk-gold fw-bold text-uppercase tracking-widest">
+                                    — <?= htmlspecialchars($press['source'] ?? '') ?>
+                                </span>
+
+                            </div>
+                        </div>
+
+                    <?php } ?>
+
+                </div>
+
+            </div>
+        </section>
+
+        <!-- GALLERY MASONRY -->
+        <section class="gallery-section bg-white">
+            <div class="container max-w-7xl">
+
+                <div class="text-center section-gap-bottom reveal-up">
+                    <span class="font-body text-nk-accent tracking-widest text-uppercase d-block mb-3 small">
+                        Visual Journey
+                    </span>
+
+                    <h2 class="font-heading section-title" style="font-size: 1.75rem;">
+                        Moments in
+                        <span class="fst-italic font-subheading text-nk-gold">
+                            Time
+                        </span>
+                    </h2>
+                </div>
+
+                <div class="row g-3">
+
+                    <?php foreach ($galleryImages as $image) { ?>
+                        <div class="col-6 col-md-4"> 
+                            <?php if (!empty($image['image'])): ?>
+                            <img src="admin/uploads/gallery/<?= htmlspecialchars($image['image']) ?>"
+                                alt="Gallery Image" class="w-100 shadow-lg reveal-up gallery-image"
+                                style="height: 180px; object-fit: cover; border-radius: 4px;">
+                            <?php endif; ?>
+                        </div>
+                    <?php } ?>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- GLOBAL FOOTER -->
+    <?php include 'abc1.php'; ?>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.27/bundled/lenis.min.js"></script>
+    <script src="assets/js/script.js"></script>
+</body>
+</html>

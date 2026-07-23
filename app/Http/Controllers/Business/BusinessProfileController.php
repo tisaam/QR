@@ -19,7 +19,7 @@ class BusinessProfileController extends Controller
         return view('business.onboarding');
     }
 
-         public function storeOnboarding(Request $request)
+    public function storeOnboarding(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -45,7 +45,7 @@ class BusinessProfileController extends Controller
             'phone' => $request->phone,
             'email' => $request->email,
             'google_place_id' => $request->google_place_id,
-            'status' => 'active',
+            'status' => 'pending',
         ]);
 
         // Set Google Review Link if Place ID is provided
@@ -54,20 +54,30 @@ class BusinessProfileController extends Controller
             $business->google_review_link = $googleService->getReviewLink($request->google_place_id);
             $business->save();
         }
+          
+        // Admin ko notify
+        \App\Models\Notification::create([
+            'user_id' => 1, // Admin ka ID
+            'type'    => 'new_business',
+            'title'   => 'New Business Registered 🆕',
+            'message' => '"' . $business->name . '" has completed onboarding and is pending approval.',
+            'data'    => [
+                'action_url'  => route('admin.businesses.show', $business),
+                'action_text' => 'Review Business'
+            ]
+        ]);
 
-        // Assign Free Plan by default
-        $freePlan = \App\Models\Plan::where('slug', 'free')->first();
-        if ($freePlan) {
-            \App\Models\Subscription::create([
-                'user_id' => Auth::id(),
-                'plan_id' => $freePlan->id,
-                'business_id' => $business->id,
-                'status' => 'active',
-                'starts_at' => now(),
-                'features' => $freePlan->features,
-                'limits' => $freePlan->limits,
-            ]);
-        }
+        // User ko notify
+        \App\Models\Notification::create([
+            'user_id' => Auth::id(),
+            'type'    => 'admin_action',
+            'title'   => 'Business Registered! ✅',
+            'message' => 'Your business "' . $business->name . '" has been registered. Go to QR Codes page to request admin approval for generating QR codes.',
+            'data'    => [
+                'action_url'  => route('qr-codes.index'),
+                'action_text' => 'Go to QR Codes'
+            ]
+        ]);
 
         return redirect()->route('dashboard')->with('success', 'Business registered successfully!');
     }

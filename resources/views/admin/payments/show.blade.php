@@ -30,6 +30,119 @@
     .business-link:hover { color: #3730a3; }
     @media (max-width: 992px) { .payment-grid { grid-template-columns: 1fr; } }
     @media (max-width: 576px) { .payment-info-grid { grid-template-columns: 1fr; } }
+/* ===========================================================
+   PAYMENT DETAILS PAGE - DARK MODE ONLY
+   (Light mode remains EXACTLY the same)
+=========================================================== */
+
+body:not(.light-mode) .payment-detail-page{
+    color: var(--child-text);
+}
+
+/* Back Link */
+
+body:not(.light-mode) .payment-back{
+    color:#818cf8;
+}
+
+body:not(.light-mode) .payment-back:hover{
+    color:#a5b4fc;
+}
+
+/* Cards */
+
+body:not(.light-mode) .payment-card{
+    background:var(--child-bg);
+    border:1px solid var(--child-border);
+    box-shadow:0 10px 25px rgba(0,0,0,.35);
+}
+
+/* Headings */
+
+body:not(.light-mode) .payment-card h2,
+body:not(.light-mode) .payment-card h3{
+    color:var(--child-text);
+}
+
+/* Labels & Values */
+
+body:not(.light-mode) .payment-label{
+    color:var(--child-text-sec);
+}
+
+body:not(.light-mode) .payment-value{
+    color:var(--child-text);
+}
+
+body:not(.light-mode) .payment-amount{
+    color:var(--accent-glow);
+}
+
+/* Status Badges */
+
+body:not(.light-mode) .status-success{
+    background:rgba(16,185,129,.15);
+    color:#34d399;
+}
+
+body:not(.light-mode) .status-pending{
+    background:rgba(245,158,11,.15);
+    color:#fbbf24;
+}
+
+body:not(.light-mode) .status-failed{
+    background:rgba(239,68,68,.15);
+    color:#f87171;
+}
+
+/* Gateway Response */
+
+body:not(.light-mode) .gateway-response{
+    background:rgba(255,255,255,.03);
+    border:1px solid var(--child-border);
+    color:var(--child-text);
+}
+
+/* User Avatar */
+
+body:not(.light-mode) .user-avatar{
+    background:rgba(99,102,241,.15);
+    color:#a5b4fc;
+}
+
+/* User Info */
+
+body:not(.light-mode) .user-name{
+    color:var(--child-text);
+}
+
+body:not(.light-mode) .user-email{
+    color:var(--child-text-sec);
+}
+
+/* Detail Rows */
+
+body:not(.light-mode) .detail-row{
+    border-top:1px solid var(--child-border);
+}
+
+body:not(.light-mode) .detail-label{
+    color:var(--child-text-sec);
+}
+
+body:not(.light-mode) .detail-value{
+    color:var(--child-text);
+}
+
+/* Business Link */
+
+body:not(.light-mode) .business-link{
+    color:#818cf8;
+}
+
+body:not(.light-mode) .business-link:hover{
+    color:#a5b4fc;
+}
 </style>
 
 <div class="payment-detail-page">

@@ -1,46 +1,247 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - {{ config('app.name') }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: #ececec;
+        }
+
+        .register-wrapper {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 30px;
+        }
+
+        .register-card {
+            width: 650px;
+            background: #fff;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, .12);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            border-bottom: 4px solid #0088d7;
+            padding: 30px 18px;
+        }
+
+
+
+        .card-body {
+            padding: 18px;
+        }
+
+        .field {
+            margin-bottom: 22px;
+        }
+
+        .field label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+            font-size: 15px;
+        }
+
+        .field input {
+            width: 100%;
+            height: 36px;
+            border: 1px solid #d8d8d8;
+            border-radius: 3px;
+            padding: 0 15px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .field input:focus {
+            border-color: #0088d7;
+        }
+
+        .row {
+            display: flex;
+            gap: 20px;
+        }
+
+        .half {
+            width: 50%;
+        }
+
+        .bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+        }
+
+        .checkbox {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .checkbox input {
+            margin-right: 8px;
+        }
+
+        .checkbox a {
+            color: #0088d7;
+            text-decoration: none;
+        }
+
+        .register-btn {
+            background: #0088d7;
+            color: #fff;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 4px;
+            font-size: 17px;
+            cursor: pointer;
+            transition: .3s;
+        }
+
+        .register-btn:hover {
+            background: #006fb0;
+        }
+
+        .login-link {
+            margin-top: 30px;
+            text-align: center;
+            color: #666;
+        }
+
+        .login-link a {
+            color: #0088d7;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .copyright {
+            margin-top: 20px;
+            color: #888;
+            font-size: 14px;
+        }
+
+        @media(max-width:768px) {
+
+            .register-card {
+                width: 100%;
+            }
+
+            .row {
+                flex-direction: column;
+            }
+
+            .half {
+                width: 100%;
+            }
+
+            .bottom {
+                flex-direction: column;
+                gap: 20px;
+                align-items: flex-start;
+            }
+
+            .signup-box {
+                padding: 25px;
+            }
+
+        }
+    </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-    <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
-        <div class="text-center mb-6">
-            <i class="fas fa-user-plus text-blue-600 text-4xl"></i>
-            <h2 class="text-2xl font-bold mt-2">Create Account</h2>
+
+<body>
+
+    <div class="register-wrapper">
+
+        <div class="register-card">
+
+            <div class="card-header">
+
+                <b>
+                    <p>Create Your Account </p>
+                </b>
+            </div>
+
+            <div class="card-body">
+
+                <form method="POST" action="{{ route('register') }}">
+                    @csrf
+
+                    <div class="field">
+                        <label>Business Owner Name</label>
+                        <input type="text" name="name" value="{{ old('name') }}" required>
+                    </div>
+
+                    <div class="field">
+                        <label>E-mail Address</label>
+                        <input type="email" name="email" value="{{ old('email') }}" required>
+                    </div>
+                    <div class="field">
+                        <label>Phone Number</label>
+                        <input type="text" name="phone" value="{{ old('phone') }}">
+                    </div>
+
+                    <div class="row">
+
+                        <div class="field half">
+                            <label>Password</label>
+                            <input type="password" name="password" required>
+                        </div>
+
+                        <div class="field half">
+                            <label>Password Confirmation</label>
+                            <input type="password" name="password_confirmation" required>
+                        </div>
+
+                    </div>
+
+                    
+
+                    <div class="bottom">
+
+                        <label class="checkbox">
+                            <input type="checkbox" required>
+                            I agree with
+                            <a href="#">Terms of Use</a>
+                        </label>
+
+                        <button class="register-btn" type="submit">
+                            Sign Up
+                        </button>
+
+                    </div>
+
+                </form>
+
+
+                <div class="login-link">
+                    Already have an account?
+                    <a href="{{ route('login') }}">Sign In!</a>
+                </div>
+
+            </div>
+
         </div>
 
-        <form method="POST" action="{{ route('register') }}">
-            @csrf
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Business Owner Name</label>
-                <input type="text" name="name" value="{{ old('name') }}" required class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500">
-            </div>
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input type="email" name="email" value="{{ old('email') }}" required class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500">
-            </div>
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                <input type="text" name="phone" value="{{ old('phone') }}" class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500">
-            </div>
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <input type="password" name="password" required class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500">
-            </div>
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-                <input type="password" name="password_confirmation" required class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500">
-            </div>
-            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700">Register</button>
-        </form>
-
-        <div class="mt-4 text-center text-sm text-gray-500">
-            Already have an account? <a href="{{ route('login') }}" class="text-blue-600 font-medium">Login</a>
+        <div class="copyright">
+            © Copyright 2026. All Rights Reserved.
         </div>
+
     </div>
+
 </body>
-</html>

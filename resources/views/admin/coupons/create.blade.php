@@ -22,6 +22,110 @@
     .btn-primary:hover { background: #4338ca; }
     .helper-text { font-size: 0.82rem; color: #6b7280; }
     @media (max-width: 768px) { .coupon-form-grid { grid-template-columns: 1fr; } .coupon-actions { justify-content: stretch; flex-direction: column; } .btn-secondary, .btn-primary { width: 100%; text-align: center; } }
+/* ===========================================================
+   COUPON CREATE / EDIT PAGE - DARK MODE ONLY
+   (Light mode remains EXACTLY the same)
+=========================================================== */
+
+body:not(.light-mode) .coupon-page{
+    color: var(--child-text);
+}
+
+/* Header */
+
+body:not(.light-mode) .coupon-back{
+    color:#818cf8;
+}
+
+body:not(.light-mode) .coupon-back:hover{
+    color:#a5b4fc;
+}
+
+body:not(.light-mode) .coupon-title{
+    color:var(--child-text);
+}
+
+/* Card */
+
+body:not(.light-mode) .coupon-card{
+    background:var(--child-bg);
+    border:1px solid var(--child-border);
+    box-shadow:0 10px 25px rgba(0,0,0,.35);
+}
+
+/* Labels */
+
+body:not(.light-mode) .coupon-label{
+    color:var(--child-text);
+}
+
+/* Inputs */
+
+body:not(.light-mode) .coupon-input,
+body:not(.light-mode) .coupon-select,
+body:not(.light-mode) .coupon-textarea{
+    background:var(--child-bg);
+    color:var(--child-text);
+    border:1px solid var(--child-border);
+}
+
+body:not(.light-mode) .coupon-input::placeholder,
+body:not(.light-mode) .coupon-textarea::placeholder{
+    color:var(--child-text-sec);
+}
+
+body:not(.light-mode) .coupon-input:focus,
+body:not(.light-mode) .coupon-select:focus,
+body:not(.light-mode) .coupon-textarea:focus{
+    outline:none;
+    border-color:var(--accent-glow);
+    box-shadow:0 0 0 3px var(--accent-glow-soft);
+}
+
+/* Select */
+
+body:not(.light-mode) .coupon-select option{
+    background:#111827;
+    color:#f8fafc;
+}
+
+/* Toggle */
+
+body:not(.light-mode) .coupon-toggle{
+    color:var(--child-text);
+}
+
+body:not(.light-mode) .coupon-toggle input[type="checkbox"]{
+    accent-color:var(--accent-glow);
+}
+
+/* Buttons */
+
+body:not(.light-mode) .btn-secondary{
+    background:rgba(255,255,255,.03);
+    color:var(--child-text);
+    border:1px solid var(--child-border);
+}
+
+body:not(.light-mode) .btn-secondary:hover{
+    background:rgba(255,255,255,.08);
+}
+
+body:not(.light-mode) .btn-primary{
+    background:#4f46e5;
+    color:#fff;
+    border-color:#4f46e5;
+}
+
+body:not(.light-mode) .btn-primary:hover{
+    background:#4338ca;
+}
+
+/* Helper Text */
+
+body:not(.light-mode) .helper-text{
+    color:var(--child-text-sec);
+}
 </style>
 
 <div class="coupon-page">
